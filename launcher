@@ -1,0 +1,4 @@
+#!/bin/bash
+export WISH_PACKAGE_MODE=1
+wish launcher - launcher
+
