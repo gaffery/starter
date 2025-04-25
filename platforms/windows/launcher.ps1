@@ -1,5 +1,5 @@
-#$WISH_LOCAL = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$WISH_LOCAL = Split-Path -Parent ([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)
+$WISH_LOCAL = Split-Path -Parent $MyInvocation.MyCommand.Definition
+#$WISH_LOCAL = Split-Path -Parent ([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)
 $WISH_PYTHON = (Get-ChildItem -Path "$WISH_LOCAL\packages\python" -Directory | Select-Object -Last 1).Name
 $WISH_VERSION = (Get-ChildItem -Path "$WISH_LOCAL\packages\wish" -Directory | Select-Object -Last 1).Name
 

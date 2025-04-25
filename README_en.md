@@ -6,10 +6,11 @@
 
 ## Table of Contents
 + [Quick Start](#quick-start)
++ [Quick Examples](#quick-examples)
 + [Basic Usage](#basic-usage)
 + [Command Guide](#command-guide)
-+ [Launcher Guide](#launcher-guide)
-+ [Dependencies](#dependencies)
++ [UI Guide](#ui-guide)
++ [Dependency Notes](#dependency-notes)
 + [Environment Variables](#environment-variables)
 + [FAQ](#faq)
 + [Contributing Guide](#contributing-guide)
@@ -18,53 +19,84 @@
 
 ## Quick Start
 
-Download the release package for your platform and extract it to any directory. Simply run the launcher or wish script in the directory (you can configure or modify environment variables in the startup script to specify different cache or development directories).
+Download the release package for your platform, extract it to any directory, and run the launcher or wish script in that directory. You can configure or modify environment variables in the startup script to point to different cache or development directories.
 
-With simple commands, you can quickly synchronize software, plugins, tools, scripts, Python modules, etc. from the framework to your local device, and directly launch or execute them.
+With simple commands, you can quickly sync software, plugins, tools, scripts, Python modules, and any data that can be packaged to your local device, and directly launch or build scripts.
 
-### What can it do?
-- One-click launch of software or tools, no manual download or installation required
-- Quickly build Python versions and third-party library environments, and run scripts directly
-- Easily switch between multiple project environments, each with independent configuration and dependencies
-- Automatically manage dependencies and development environments, parse upstream/downstream relationships via API, and support developer mode
+---
+
+## Quick Examples
+
+Here are the most common Wish command scenarios:
+
+| Scenario                | Example Command                                 | Description                        |
+|-------------------------|-------------------------------------------------|------------------------------------|
+| Launch specific Python  | wish python=3.10 - python                       | Specify Python version and launch  |
+| Install & run requests  | wish python=3.7 requests - python               | Specify Python 3.7 and load requests|
+| Launch Wish Launcher    | wish launcher - launcher                        | Launch GUI launcher                |
+| Update Wish itself      | wish wish + start                               | Update Wish and show dependencies  |
+| Local dev package debug | wish mypkg@D:/dev/mypkg - mycmd                 | Specify local package path for debug|
+
+---
 
 ## Basic Usage
-Enter the command in cmd or terminal: wish xxx - yyy (xxx is the package name, yyy is the command to execute)
-- Example: Cache and launch Blender for the first time, then quickly launch from cache:
-  ![Demo 1](./images/cmd_7aTg34G0no.gif)
-- Example: Launch the GUI launcher, showing login, project info, and launcher icons:
-  ![Demo 2](./images/cmd_GAeZxGuQdr.gif)
-- Example: Switch between different Python versions and libraries, no need to manually install multiple Pythons or pip:
-  ![Demo 3](./images/cmd_yzO16Lb4nP.gif)
-- Example: One-click start of large model proxy environment and MCP service:
-  ![Demo 4](./images/cmd_Poy8AqLRwB.gif)
-- Example: Quickly start Maya and auto-license (for learning/testing only), different projects can load different environments and tools:
-  ![Demo 5](./images/explorer_cPLMkS9TOh.gif)
-- Example: Start Maya and load Arnold renderer, simplified workflow, plugin auto-adapts to Maya2025:
-  ![Demo Maya Plugin](./images/python_2d8mYHd35f.gif)
+Open cmd or terminal, enter `wish xxx - yyy` (xxx is the package, yyy is the command).
 
-In summary, Wish uses a caching mechanism to automatically isolate and manage runtime environments, improving consistency and automation efficiency. It is suitable for clusters, automation, and other scenarios without pre-deploying environments. Different projects can automatically initialize independent environments, and the cache can record access and support custom cleanup strategies.
+- Example: Cache and launch Blender, showing first-time cache and fast launch from cache:
+  ![Demo 1](./images/cmd_7aTg34G0no.gif)
+  *First cache vs fast launch demo*
+- Example: Launch GUI launcher, login, get project info, and project config with launcher icons:
+  ![Demo 2](./images/cmd_GAeZxGuQdr.gif)
+  *Launcher UI and project config demo*
+- Example: Switch between different Python versions and libraries, no manual install needed:
+  ![Demo 3](./images/cmd_yzO16Lb4nP.gif)
+  *Multi-version Python and library switching*
+- Example: Quickly launch LLM proxy and MCP service, show Wish LLM CLI dialog:
+  ![Demo 4](./images/cmd_Poy8AqLRwB.gif)
+  *LLM CLI dialog demo*
+- Example: Quickly launch Maya and auto-license (for learning/testing), different projects load different environments and plugins:
+  ![Demo 5](./images/explorer_cPLMkS9TOh.gif)
+  *Unified work environment and auto-license*
+- Example: Launch Maya and load Arnold renderer, auto-adapt plugin version:
+  ![Demo Maya Plugin](./images/python_2d8mYHd35f.gif)
+  *Maya launch and Arnold plugin auto-load*
+- Example: Launch Maya with Arnold and GS Toolbox plugins, show plugin config:
+  ![Demo Maya Plugins 2](./images/python_zsXxaCa8ZO.gif)
+  *Maya multi-plugin config demo*
+
+In summary, everything in Wish is cached. It isolates runtime environments, reduces user environment issues, and ensures consistency and automation. For example, clusters can switch environments without pre-deployment, tools auto-initialize per project, and cache records can be customized for cleanup.
 
 ### Command Format
 
+| Parameter | Description                        | Required |
+|-----------|------------------------------------|----------|
+| package   | Specify requested package(s)       | Yes      |
+| @path     | Specify local package path (debug) | Optional |
+| =tag      | Specify version range rule         | Optional |
+| -command  | Specify command to execute         | Optional |
+
+Format:
+
+```shell
 wish <package>(required)[@path(optional)]=tag(optional) - command(optional)
+```
+
 - `package`: can specify multiple packages (required)
-- `command`: command to execute after requesting the package
-- `@path`: specify local package path (for debugging, optional)
+- `command`: command to execute after requesting package
+- `@path`: specify local package path (debug, optional)
 - `=tag`: specify version selection rule (optional)
 - `-command`: command to execute (optional)
 
 #### Usage Examples
 - `wish python=3.7 requests - python`
-  
-  Request Python 3.7, requests matches the latest version for Python 3.7, then launch the Python interpreter
+  Request Python 3.7, requests matches latest for 3.7, then launch Python
 - `wish python=3.10 requests>=2.32 - python`
-  
-  Request Python 3.10, requests matches the latest version >=2.32, then launch the Python interpreter
+  Request Python 3.10, requests >=2.32, then launch Python
 - `wish wish + start`
+  Update Wish and show dependencies, enter cmd terminal
 
 #### Path Syntax
-- `@` can specify a package outside the cache directory (for debugging, optional)
+- `@` can specify a package outside the cache dir (debug, optional)
 #### Tag Syntax
 - `=` match latest minor version (default)
 - `<` less than a version
@@ -75,11 +107,7 @@ wish <package>(required)[@path(optional)]=tag(optional) - command(optional)
 - `!=` exclude a version
 #### Command Execution Syntax
 - `-` simple info mode (show only cache info)
-- `+` verbose mode (show detailed execution info)
-
-### Launch the default GUI launcher
-![Default Launcher](./images/launcher1.png)
-![User Demo](./images/python_cd29wKqk9h.gif)
+- `+` verbose mode (detailed execution info)
 
 ## Command Guide
 Wish is a highly efficient and concise command-line dependency cache executor. It automatically caches required packages and their dependencies, and immediately executes specified commands to help you quickly enter your development or runtime environment.
@@ -134,15 +162,28 @@ Wish uses package.py for custom configuration, dependency declaration, and envir
 - `ban("numpy==1.24.0")`: exclude package
 - `alias("test", "python xxxx.py")`: define alias
 
-#### 3. Example
+#### 3.  Example for package.py 
 ```python
 import os
-ava("platform=win32")
+# Declare only for Windows platform
+ava("platform=win32", "maya=2025")
+# Depend on Python 3.10 and requests
 req("python>=3.10")
-# ban("numpy==1.24.0")
-cmd_path = os.path.join(this.root, "src", "cmd")
+req("requests>=2.32","httpx")
+# Exclude specific numpy version
+ban("numpy==1.24.0")
+# Configure PATH environment variable
+cmd_path = os.path.join(this.root, "src", "bin")
 env("PATH").insert(cmd_path)
+# Define alias command
+alias("run", "python main.py")
+# Optional extension dependency
+ext("pyside2=5.15.2")
+# Initialization logic
+if this.init:
+    print(f"[{this.name}] Initialization complete, current version: {this.tags}")
 ```
+
 
 #### 4. Execution Flow
 - Wish parses the command and automatically finds and caches the package
@@ -205,59 +246,69 @@ No separate installation needed; download the right package for your platform.
 
 ## FAQ
 
-Q: Is @path required?
-A: No. If omitted, Wish uses the default cache path or remote source.
+> Tip: Use Ctrl+F to quickly search for keywords.
 
-Q: Is the command required?
-A: No. You can use Wish just to cache packages and dependencies.
+### Environment & Execution
 
-Q: How to enable verbose mode?
-A: Use + instead of -, e.g. wish requests +
+- **Q: Is @path required?**  
+  **A:** No. If omitted, Wish uses the default cache path or remote source.
 
-Q: Launcher won't run or says permission denied?
-A: Check script file permissions. On Windows, try "Run as administrator". On Linux, ensure execute permission (chmod +x).
+- **Q: Is the command after '-' required?**  
+  **A:** No. You can use Wish just to cache packages and dependencies.
 
-Q: Environment variables not effective?
-A: Set them directly in the startup script or in your system environment. Some variables require restarting the terminal or system.
+- **Q: Launcher won't run or says permission denied?**  
+  **A:** Check script file permissions. On Windows, try "Run as administrator". On Linux, ensure execute permission (`chmod +x`).
 
-Q: How to switch Wish's cache, package directory, etc.?
-A: Set `WISH_LOCAL`, `WISH_STORAGE_PATH`, `WISH_PACKAGE_PATH`, or modify the startup script directly.
+- **Q: Environment variables not effective?**  
+  **A:** Set them directly in the startup script or in your system environment. Some variables require restarting the terminal or system.
 
-Q: Command not found after starting Wish?
-A: Make sure the PATH environment variable includes the wish directories, or use the full path for wish commands.
+- **Q: Command not found after starting Wish?**  
+  **A:** Make sure the PATH environment variable includes the Wish directories, or use the full path for Wish commands.
 
-Q: How to integrate Wish in automation scripts?
-A: Use `wish.cmd` or `launcher.ps1`, which support passing arguments and environment variables, suitable for batch tasks and CI.
+- **Q: How to run Wish on Windows?**  
+  **A:** Use `windows/wish.cmd` or `windows/launcher.ps1`, which support command line arguments and environment variables.
 
-Q: What if there are dependency conflicts?
-A: Wish prioritizes the package and version specified in the command. For conflicts, specify a clear version range or use ban() in package.py to exclude conflicting packages.
+- **Q: How to run Wish on Linux?**  
+  **A:** Use `linux/wish` or `linux/launcher`, and ensure execute permission (`chmod +x`).
 
-Q: How to clear the local cache?
-A: Delete the caches directory. Wish will re-fetch and cache required packages on the next request.
+### Cache & Dependencies
 
-Q: How to debug package.py?
-A: Add print statements in package.py or use wish + for verbose output and script path info.
+- **Q: How to switch Wish's cache, package directory, etc.?**  
+  **A:** Set `WISH_LOCAL`, `WISH_STORAGE_PATH`, `WISH_PACKAGE_PATH`, or modify the startup script directly.
 
-Q: How to customize Wish behavior?
-A: Set environment variables (WISH_LOCAL, WISH_STORAGE_PATH, etc.) or modify package.py for advanced logic.
+- **Q: How to clear the local cache?**  
+  **A:** Delete the `caches` directory. Wish will re-fetch and cache required packages on the next request.
 
-Q: How to run Wish on Windows?
-A: Use windows/wish.cmd or windows/launcher.ps1, which support command line arguments and environment variables.
+- **Q: What if there are dependency conflicts?**  
+  **A:** Wish prioritizes the package and version specified in the command. For conflicts, specify a clear version range or use `ban()` in `package.py` to exclude conflicting packages.
 
-Q: How to run Wish on Linux?
-A: Use linux/wish or linux/launcher, and ensure execute permission (chmod +x).
+- **Q: Which Python versions are supported?**  
+  **A:** By default, the Python version bundled in the resource package is used. You can set `WISH_PYTHON`, but it's not recommended.
 
-Q: What if a package or dependency is not loaded correctly?
-A: Check the command format, package.py dependencies, environment variables, and use wish + for detailed logs.
+- **Q: What if a package or dependency is not loaded correctly?**  
+  **A:** Check the command format, `package.py` dependencies, environment variables, and use `wish +` for detailed logs.
 
-Q: Which Python versions are supported?
-A: By default, the Python version bundled in the resource package is used. You can set WISH_PYTHON, but it's not recommended.
+### Command & Debugging
 
-Q: How to contribute your own package?
-A: Follow the package structure (with package.py), submit to the package repo or local develop directory, and debug with wish @path.
+- **Q: How to enable verbose mode?**  
+  **A:** Use `+` instead of `-`, e.g. `wish requests +`
 
-Q: How is the backend deployed and what tech stack is used?
-A: The backend currently uses Gitlab and its runner service for packaging and CICD, uploads data to minio object storage, and updates relationships to a neo4j graph database. This allows querying upstream/downstream packages and supports automated testing and notification for downstream packages when upstream packages are pre-released.
+- **Q: How to integrate Wish in automation scripts?**  
+  **A:** Use `wish.cmd` or `launcher.ps1`, which support passing arguments and environment variables, suitable for batch tasks and CI.
+
+- **Q: Any tips for debugging package.py?**  
+  **A:** Add print statements in `package.py` or use `wish +` for verbose output and script path info.
+
+- **Q: How to customize Wish behavior?**  
+  **A:** Set environment variables (`WISH_LOCAL`, `WISH_STORAGE_PATH`, etc.) or modify `package.py` for advanced logic.
+
+### Server & Contribution
+
+- **Q: How is the backend deployed and what tech stack is used?**  
+  **A:** The backend uses Gitlab and its runner service for packaging and CICD, uploads data to MinIO object storage, and updates relationships to a Neo4j graph database. This allows querying upstream/downstream packages and supports automated testing and notification for downstream packages when upstream packages are pre-released.
+
+- **Q: How to contribute your own package?**  
+  **A:** Follow the package structure (with `package.py`), submit to the package repo or local develop directory, and debug with `wish @path`.
 
 ## Contributing Guide
 Fork this project;
@@ -267,3 +318,4 @@ Create a feature branch;
 Submit a PR with a description;
 
 Follow a concise and consistent documentation style;
+

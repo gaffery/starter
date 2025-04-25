@@ -1,7 +1,7 @@
 @echo off
 
-rem set "WISH_LOCAL=%~dp0"
-set "WISH_LOCAL=E:\WishTools\"
+set "WISH_LOCAL=%~dp0"
+rem set "WISH_LOCAL=E:\WishTools\"
 set "WISH_PYTHON="
 for /d %%i in ("%WISH_LOCAL%packages\python\*") do (
     set "WISH_PYTHON=%%~nxi"
