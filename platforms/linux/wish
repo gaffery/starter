@@ -14,8 +14,4 @@ export PATH="$WISH_PACKAGE_ROOT/src/bin:$PATH"
 export WISH_RESTAPI_URL="http://wish.net:9527/graphs?access=ADMINOSFODNN7EXAMPLE&secret=wJalrXUtnFEMI0K7MDENG0bPxRfiCYEXAMPLEKEY"
 export WISH_STORAGE_URL="http://wish.net:9000/storage?access=y7ZTrqZcJbl17FHt5bUb&secret=EpqF6UtVwR05lYbvNejTkdAwXX1ZvA4slq7rjZHn"
 
-#export WISH_RESTAPI_URL="http://47.120.50.74:9526/graphs?access=ADMINOSFODNN7EXAMPLE&secret=wJalrXUtnFEMI0K7MDENG0bPxRfiCYEXAMPLEKEY"
-#export WISH_STORAGE_URL="http://47.120.50.74:9000/storage?access=y7ZTrqZcJbl17FHt5bUb&secret=EpqF6UtVwR05lYbvNejTkdAwXX1ZvA4slq7rjZHn"
-
-exec "$WISH_LOCAL/packages/wish/$WISH_VERSION/src/wish" wish python - wish "$@"
-
+exec "$WISH_LOCAL/packages/wish/$WISH_VERSION/src/wish" wish - wish wish - wish "$@"
