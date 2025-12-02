@@ -1,0 +1,22 @@
+#!/bin/bash
+export WISH_LOCAL=$(dirname "$(readlink -f "$0")")
+export WISH_PYTHON=$(basename "$(ls -d "$WISH_LOCAL"/packages/python/*/ | sort -V | tail -n 1)")
+export WISH_VERSION=$(basename "$(ls -d "$WISH_LOCAL"/packages/wish/*/ | sort -V | tail -n 1)")
+
+export WISH_PACKAGE_PATH="$WISH_LOCAL/packages"
+export WISH_STORAGE_PATH="$HOME/.config/wishtools/caches"
+export WISH_DEVELOP_PATH="$HOME/.config/wishtools/develops"
+
+export WISH_PACKAGE_ROOT="$WISH_LOCAL/packages/python/$WISH_PYTHON"
+export LD_LIBRARY_PATH="$WISH_PACKAGE_ROOT/src/lib:$LD_LIBRARY_PATH"
+export PATH="$WISH_PACKAGE_ROOT/src/bin:$PATH"
+export WISH_PACKAGE_MODE=1
+
+export WISH_RESTAPI_URL="http://wish.net:9527/graphs?access=ADMINOSFODNN7EXAMPLE&secret=wJalrXUtnFEMI0K7MDENG0bPxRfiCYEXAMPLEKEY"
+export WISH_STORAGE_URL="http://wish.net:9000/storage?access=y7ZTrqZcJbl17FHt5bUb&secret=EpqF6UtVwR05lYbvNejTkdAwXX1ZvA4slq7rjZHn"
+
+#export WISH_RESTAPI_URL="http://47.120.50.74:9526/graphs?access=ADMINOSFODNN7EXAMPLE&secret=wJalrXUtnFEMI0K7MDENG0bPxRfiCYEXAMPLEKEY"
+#export WISH_STORAGE_URL="http://47.120.50.74:9000/storage?access=y7ZTrqZcJbl17FHt5bUb&secret=EpqF6UtVwR05lYbvNejTkdAwXX1ZvA4slq7rjZHn"
+
+exec "$WISH_LOCAL/packages/wish/$WISH_VERSION/src/wish" wish python - wish launcher - launcher
+
