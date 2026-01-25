@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>WISH : DSL 语法速查表</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">WISH</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="6488074.html">产品主页</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            WISH : DSL 语法速查表
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+    
+        
+    
+        
+        
+            Created by <span class='author'> root</span>, last modified on 1月 25, 2026
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="DSL语法速查表-WISHDSL速查表(CheatSheet)">WISH DSL 速查表 (Cheat Sheet)</h1>
+<blockquote><p>供 AI Agent 和开发者快速查阅关键字行为与副作用。</p></blockquote>
+<h2 id="DSL语法速查表-1.关键字全集">1. 关键字全集</h2>
+<div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">关键字</th><th class="confluenceTh">全称</th><th class="confluenceTh">作用域 (Phase)</th><th class="confluenceTh">逻辑关系</th><th class="confluenceTh">副作用</th><th class="confluenceTh">示例</th></tr><tr><td class="confluenceTd"><strong>req</strong></td><td class="confluenceTd">Require</td><td class="confluenceTd"><strong>静态解析</strong> (AST)</td><td class="confluenceTd"><code>AND</code> (必须)</td><td class="confluenceTd">强制拉取依赖包到环境</td><td class="confluenceTd"><code>req(&quot;python&quot;, &quot;numpy&gt;=1.20&quot;)</code></td></tr><tr><td class="confluenceTd"><strong>ava</strong></td><td class="confluenceTd">Available</td><td class="confluenceTd"><strong>静态解析</strong> (AST)</td><td class="confluenceTd"><code>OR</code> (条件)</td><td class="confluenceTd">如果条件不满足，<strong>当前包</strong>会被求解器丢弃</td><td class="confluenceTd"><code>ava(&quot;platform=linux&quot;)</code></td></tr><tr><td class="confluenceTd"><strong>ban</strong></td><td class="confluenceTd">Ban</td><td class="confluenceTd"><strong>静态解析</strong> (AST)</td><td class="confluenceTd"><code>NOT</code> (冲突)</td><td class="confluenceTd">如果目标包存在，<strong>当前包</strong>不可用</td><td class="confluenceTd"><code>ban(&quot;conflicting-lib&quot;)</code></td></tr><tr><td class="confluenceTd"><strong>xor</strong></td><td class="confluenceTd">Exclusive OR</td><td class="confluenceTd"><strong>静态解析</strong> (AST)</td><td class="confluenceTd"><code>XOR</code> (互斥)</td><td class="confluenceTd">从列表中<strong>选且仅选</strong>一个加载</td><td class="confluenceTd"><code>xor(&quot;qt5&quot;, &quot;qt6&quot;)</code></td></tr><tr><td class="confluenceTd"><strong>alt</strong></td><td class="confluenceTd">Alternative</td><td class="confluenceTd"><strong>静态解析</strong> (AST)</td><td class="confluenceTd"><code>Fallback</code></td><td class="confluenceTd">当目标包缺失时，<strong>当前包</strong>充当替身</td><td class="confluenceTd"><code>alt(&quot;openssl&quot;)</code></td></tr><tr><td class="confluenceTd"><strong>ext</strong></td><td class="confluenceTd">Extension</td><td class="confluenceTd"><strong>静态解析</strong> (AST)</td><td class="confluenceTd"><code>Inject</code></td><td class="confluenceTd">第二阶段解析时注入（需触发条件）</td><td class="confluenceTd"><code>ext(&quot;plugin@maya&quot;)</code></td></tr><tr><td class="confluenceTd"><strong>env</strong></td><td class="confluenceTd">Environ</td><td class="confluenceTd"><strong>动态执行</strong> (Runtime)</td><td class="confluenceTd">N/A</td><td class="confluenceTd">修改当前进程的环境变量</td><td class="confluenceTd"><code>env(&quot;PATH&quot;).insert(bin_path)</code></td></tr><tr><td class="confluenceTd"><strong>alias</strong></td><td class="confluenceTd">Alias</td><td class="confluenceTd"><strong>动态执行</strong> (Runtime)</td><td class="confluenceTd">N/A</td><td class="confluenceTd">注册 Shell 命令别名</td><td class="confluenceTd"><code>alias(&quot;ll&quot;, &quot;ls -l&quot;)</code></td></tr></tbody></table></div>
+<h2 id="DSL语法速查表-2.常见模式代码片">2. 常见模式代码片</h2>
+<h3 id="DSL语法速查表-模式A：跨平台依赖(Cross-PlatformDependency)">模式 A：跨平台依赖 (Cross-Platform Dependency)</h3>
+<p><strong>错误写法</strong>:</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence">
+if sys.platform == &quot;win32&quot;:
+    req(&quot;win32-api&quot;) # ❌ 错误！静态解析器会忽略 if，Linux 下也会抓取此依赖！
+</pre>
+</div></div>
+<p><strong>正确写法</strong>:</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence">
+# 方案 1: 拆分包 (推荐)
+# 创建 packages/my-lib/1.0.0.win/package.py 和 1.0.0.lin/package.py
+# 分别使用 ava(&quot;platform=windows&quot;) 和 ava(&quot;platform=linux&quot;)
+
+# 方案 2: 使用 ava (如果是一个包文件)
+# 让 WISH 的求解器来处理平台判断
+req(&quot;win32-api&quot;)
+ava(&quot;platform=windows&quot;) # 只有在 Windows 平台，这个包才可用
+</pre>
+</div></div>
+<h3 id="DSL语法速查表-模式B：插件自动注入(Auto-Injection)">模式 B：插件自动注入 (Auto-Injection)</h3>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence">
+# 在 render-plugin 包中：
+
+# 仅当环境中存在 maya 时，此插件才会被加载
+req(&quot;render-core&quot;)
+ava(&quot;maya&quot;)
+</pre>
+</div></div>
+<h3 id="DSL语法速查表-模式C：环境变量优先级">模式 C：环境变量优先级</h3>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence">
+# 高优先级（插队到最前）
+env(&quot;PATH&quot;).insert(&quot;/opt/my/bin&quot;)
+
+# 低优先级（追加到最后）
+env(&quot;PATH&quot;).append(&quot;/usr/local/bin&quot;)
+
+# 强制覆盖
+env(&quot;MY_VER&quot;).setenv(&quot;1.0.0&quot;)
+</pre>
+</div></div>
+<h2 id="DSL语法速查表-3.调试指南">3. 调试指南</h2>
+<p><strong>解析错误 (<code>RESOLVE_ERROR</code>)</strong>:</p>
+<ul><li>检查 <code>ava</code> 条件是否过于严苛。</li><li>检查 <code>req</code> 是否形成了循环依赖。</li><li>检查 <code>ban</code> 是否排除了必要的依赖。</li></ul>
+<p><strong>扩展未生效 (<code>PENDING_ERROR</code>)</strong>:</p>
+<ul><li>检查 <code>ext(&quot;pkg@trigger&quot;)</code> 中的 <code>trigger</code> 包是否在最终解中。</li><li>检查被扩展包的 <code>ava</code> 条件是否满足。</li></ul>
+<h2 id="DSL语法速查表-4.执行部分：完整的Python能力">4. 执行部分：完整的 Python 能力</h2>
+<blockquote><p><strong>核心理解</strong>: package.py 不仅仅是配置文件，它分为两个部分：<strong>声明部分</strong>（AST 静态提取）和<strong>执行部分</strong>（完整 Python 运行时）。</p></blockquote>
+<h3 id="DSL语法速查表-4.1双重结构">4.1 双重结构</h3>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence">
+# ============ 声明部分 (AST 静态提取，进入图谱) ============
+# 这些关键字会被 AST 解析器提取，用于依赖解析
+# 不会在此时执行，而是用于构建依赖图
+
+req(&quot;python&gt;=3.9&quot;, &quot;pytorch&gt;=2.0&quot;)     # 依赖声明
+ava(&quot;platform=linux&quot;, &quot;cuda&gt;=11.0&quot;)    # 可用条件
+ban(&quot;tensorflow&quot;)                       # 冲突声明
+xor(&quot;backend-a&quot;, &quot;backend-b&quot;)          # 互斥约束
+ext(&quot;flash-attn@cuda&gt;=11.8&quot;)           # 条件扩展
+
+# ============ 执行部分 (完整 Python，依赖解析后执行) ============
+# 以下代码在包被选中后完整执行，拥有完整的 Python 能力
+
+import os
+import shutil
+import subprocess
+import urllib.request
+
+# 环境变量设置
+env(&quot;PATH&quot;).insert(os.path.join(this.root, &quot;bin&quot;))
+env(&quot;PYTHONPATH&quot;).insert(this.root)
+env(&quot;LD_LIBRARY_PATH&quot;).insert(os.path.join(this.root, &quot;lib&quot;))
+
+# 条件逻辑
+if os.path.exists(&quot;/opt/cuda&quot;):
+    env(&quot;CUDA_HOME&quot;).setenv(&quot;/opt/cuda&quot;)
+    env(&quot;PATH&quot;).insert(&quot;/opt/cuda/bin&quot;)
+
+# 首次安装处理
+if this.init:
+    # 创建目录
+    os.makedirs(os.path.join(this.root, &quot;cache&quot;), exist_ok=True)
+    
+    # 复制配置文件
+    config_src = os.path.join(this.root, &quot;config.template&quot;)
+    config_dst = os.path.expanduser(&quot;~/.config/myapp/config&quot;)
+    if os.path.exists(config_src):
+        os.makedirs(os.path.dirname(config_dst), exist_ok=True)
+        shutil.copy(config_src, config_dst)
+
+# 运行系统命令
+subprocess.run([&quot;ldconfig&quot;], check=False)
+
+# 下载资源
+model_path = os.path.join(this.root, &quot;models&quot;, &quot;default.bin&quot;)
+if not os.path.exists(model_path):
+    urllib.request.urlretrieve(
+        &quot;https://models.example.com/default.bin&quot;,
+        model_path
+    )
+
+# 任何 Python 能做的事情都可以在这里做
+</pre>
+</div></div>
+
+<h3 id="DSL语法速查表-4.2this上下文对象">4.2 this 上下文对象</h3>
+<div class="table-wrap"><table class="confluenceTable">
+<tbody>
+<tr><th class="confluenceTh">属性</th><th class="confluenceTh">类型</th><th class="confluenceTh">说明</th><th class="confluenceTh">示例值</th></tr>
+<tr><td class="confluenceTd"><code>this.name</code></td><td class="confluenceTd">str</td><td class="confluenceTd">当前包名</td><td class="confluenceTd"><code>&quot;pytorch&quot;</code></td></tr>
+<tr><td class="confluenceTd"><code>this.tags</code></td><td class="confluenceTd">str</td><td class="confluenceTd">当前版本标签</td><td class="confluenceTd"><code>&quot;2.0.1.lin.0&quot;</code></td></tr>
+<tr><td class="confluenceTd"><code>this.root</code></td><td class="confluenceTd">str</td><td class="confluenceTd">包安装根目录</td><td class="confluenceTd"><code>&quot;/packages/pytorch/2.0.1.lin.0&quot;</code></td></tr>
+<tr><td class="confluenceTd"><code>this.init</code></td><td class="confluenceTd">bool</td><td class="confluenceTd">是否首次激活（刚下载）</td><td class="confluenceTd"><code>True</code> / <code>False</code></td></tr>
+</tbody>
+</table></div>
+
+<h3 id="DSL语法速查表-4.3env()操作方法">4.3 env() 操作方法</h3>
+<div class="table-wrap"><table class="confluenceTable">
+<tbody>
+<tr><th class="confluenceTh">方法</th><th class="confluenceTh">行为</th><th class="confluenceTh">示例</th></tr>
+<tr><td class="confluenceTd"><code>.insert(path)</code></td><td class="confluenceTd">插入到环境变量<strong>头部</strong>（高优先级）</td><td class="confluenceTd"><code>env(&quot;PATH&quot;).insert(&quot;/opt/bin&quot;)</code></td></tr>
+<tr><td class="confluenceTd"><code>.append(path)</code></td><td class="confluenceTd">追加到环境变量<strong>尾部</strong>（低优先级）</td><td class="confluenceTd"><code>env(&quot;PATH&quot;).append(&quot;/usr/bin&quot;)</code></td></tr>
+<tr><td class="confluenceTd"><code>.setenv(value)</code></td><td class="confluenceTd"><strong>覆盖</strong>整个环境变量</td><td class="confluenceTd"><code>env(&quot;MY_VAR&quot;).setenv(&quot;value&quot;)</code></td></tr>
+<tr><td class="confluenceTd"><code>.remove(path)</code></td><td class="confluenceTd">从环境变量中<strong>移除</strong>指定路径</td><td class="confluenceTd"><code>env(&quot;PATH&quot;).remove(&quot;/old/path&quot;)</code></td></tr>
+<tr><td class="confluenceTd"><code>.unload(prefix)</code></td><td class="confluenceTd">移除所有以 prefix 开头的路径</td><td class="confluenceTd"><code>env(&quot;PATH&quot;).unload(&quot;/opt/old&quot;)</code></td></tr>
+<tr><td class="confluenceTd"><code>.getenv()</code></td><td class="confluenceTd">获取当前环境变量值</td><td class="confluenceTd"><code>current = env(&quot;PATH&quot;).getenv()</code></td></tr>
+<tr><td class="confluenceTd"><code>.envlist()</code></td><td class="confluenceTd">获取环境变量列表形式</td><td class="confluenceTd"><code>paths = env(&quot;PATH&quot;).envlist()</code></td></tr>
+</tbody>
+</table></div>
+
+<h3 id="DSL语法速查表-4.4执行部分的常见用途">4.4 执行部分的常见用途</h3>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence">
+# 用途 1: 动态路径构建
+lib_path = os.path.join(this.root, &quot;lib&quot;, &quot;python3.10&quot;, &quot;site-packages&quot;)
+env(&quot;PYTHONPATH&quot;).insert(lib_path)
+
+# 用途 2: 平台特定配置（执行时判断，非声明时）
+import platform
+if platform.system() == &quot;Windows&quot;:
+    env(&quot;PATH&quot;).insert(os.path.join(this.root, &quot;win32&quot;, &quot;bin&quot;))
+else:
+    env(&quot;PATH&quot;).insert(os.path.join(this.root, &quot;bin&quot;))
+    
+# 用途 3: GPU 检测与配置
+def detect_cuda():
+    return os.path.exists(&quot;/usr/local/cuda&quot;) or os.environ.get(&quot;CUDA_HOME&quot;)
+
+if detect_cuda():
+    env(&quot;CUDA_VISIBLE_DEVICES&quot;).setenv(&quot;0,1,2,3&quot;)
+
+# 用途 4: 自动修复权限（首次安装）
+if this.init:
+    bin_dir = os.path.join(this.root, &quot;bin&quot;)
+    for f in os.listdir(bin_dir):
+        os.chmod(os.path.join(bin_dir, f), 0o755)
+
+# 用途 5: 注册命令别名
+alias(&quot;py&quot;, &quot;python&quot;)
+alias(&quot;pt&quot;, &quot;python -m torch.distributed.launch&quot;)
+</pre>
+</div></div>
+
+<h3 id="DSL语法速查表-4.5声明vs执行：关键区别">4.5 声明 vs 执行：关键区别</h3>
+<div class="table-wrap"><table class="confluenceTable">
+<tbody>
+<tr><th class="confluenceTh">特性</th><th class="confluenceTh">声明部分 (req/ava/ban/...)</th><th class="confluenceTh">执行部分 (其他代码)</th></tr>
+<tr><td class="confluenceTd"><strong>解析方式</strong></td><td class="confluenceTd">AST 静态提取</td><td class="confluenceTd">Python exec() 执行</td></tr>
+<tr><td class="confluenceTd"><strong>执行时机</strong></td><td class="confluenceTd">依赖解析阶段（包被选中前）</td><td class="confluenceTd">环境激活阶段（包被选中后）</td></tr>
+<tr><td class="confluenceTd"><strong>进入图谱</strong></td><td class="confluenceTd">✓ 是（用于血缘追踪）</td><td class="confluenceTd">✗ 否</td></tr>
+<tr><td class="confluenceTd"><strong>可用条件逻辑</strong></td><td class="confluenceTd">✗ 否（必须静态）</td><td class="confluenceTd">✓ 是（完整 Python）</td></tr>
+<tr><td class="confluenceTd"><strong>目的</strong></td><td class="confluenceTd">声明包之间的关系</td><td class="confluenceTd">配置运行时环境</td></tr>
+</tbody>
+</table></div>
+
+<div class="confluence-information-macro confluence-information-macro-warning"><span class="aui-icon aui-icon-small aui-iconfont-error confluence-information-macro-icon"></span><div class="confluence-information-macro-body">
+<p><strong>重要</strong>: 声明部分（req/ava/ban/xor/alt/ext）<strong>必须</strong>是静态的，不能放在 if/else/try 块中。因为它们需要被 AST 解析器静态提取，用于在代码执行前构建依赖图。</p>
+</div></div>
+                    </div>
+
+                                        
+                                                      
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on 1月 25, 2026 18:29</p>
+                    <div id="footer-logo"><a href="https://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

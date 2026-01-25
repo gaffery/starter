@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>WISH : 故障排查与诊断指南</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">WISH</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="6488074.html">产品主页</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            WISH : 故障排查与诊断指南
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+    
+        
+    
+        
+        
+            Created by <span class='author'> root</span>, last modified on 1月 25, 2026
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="id-故障排查与诊断指南-故障排查与诊断指南">故障排查与诊断指南</h1>
+<p>本文档旨在帮助开发者和运维人员快速定位和解决 Wishtools 运行过程中的常见问题。当 Wish 行为不符合预期时，请按照本指南进行系统性排查。</p>
+
+<style type='text/css'>/*<![CDATA[*/
+div.rbtoc1769336983216 {padding: 0px;}
+div.rbtoc1769336983216 ul {margin-left: 0px;}
+div.rbtoc1769336983216 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1769336983216'>
+<ul class='toc-indentation'>
+<li><a href='#id-故障排查与诊断指南-故障排查与诊断指南'>故障排查与诊断指南</a>
+<ul class='toc-indentation'>
+<li><a href='#id-故障排查与诊断指南-0.快速诊断流程图'>0. 快速诊断流程图</a></li>
+<li><a href='#id-故障排查与诊断指南-1.诊断工具箱(DiagnosticToolkit)'>1. 诊断工具箱 (Diagnostic Toolkit)</a>
+<ul class='toc-indentation'>
+<li><a href='#id-故障排查与诊断指南-1.1详细模式(VerboseMode)'>1.1 详细模式 (Verbose Mode)</a></li>
+<li><a href='#id-故障排查与诊断指南-1.2打印调试(PrintDebugging)'>1.2 打印调试 (Print Debugging)</a></li>
+<li><a href='#id-故障排查与诊断指南-1.3开发者模式(DevelopMode)'>1.3 开发者模式 (Develop Mode)</a></li>
+</ul>
+</li>
+<li><a href='#id-故障排查与诊断指南-2.核心流程诊断'>2. 核心流程诊断</a>
+<ul class='toc-indentation'>
+<li><a href='#id-故障排查与诊断指南-2.1解析阶段故障(ResolutionPhase)'>2.1 解析阶段故障 (Resolution Phase)</a></li>
+<li><a href='#id-故障排查与诊断指南-2.2同步阶段故障(SyncPhase)'>2.2 同步阶段故障 (Sync Phase)</a></li>
+<li><a href='#id-故障排查与诊断指南-2.3执行阶段故障(ExecutionPhase)'>2.3 执行阶段故障 (Execution Phase)</a></li>
+<li><a href='#id-故障排查与诊断指南-2.4环境继承诊断(EnvironmentInheritance)'>2.4 环境继承诊断 (Environment Inheritance)</a></li>
+</ul>
+</li>
+<li><a href='#id-故障排查与诊断指南-3.错误代码速查表'>3. 错误代码速查表</a></li>
+<li><a href='#id-故障排查与诊断指南-4.运维故障排查'>4. 运维故障排查</a>
+<ul class='toc-indentation'>
+<li><a href='#id-故障排查与诊断指南-4.1缓存清理'>4.1 缓存清理</a></li>
+<li><a href='#id-故障排查与诊断指南-4.2高可用验证'>4.2 高可用验证</a></li>
+</ul>
+</li>
+<li><a href='#id-故障排查与诊断指南-5.寻求支持'>5. 寻求支持</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+<h2 id="id-故障排查与诊断指南-0.快速诊断流程图">0. 快速诊断流程图</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>ASCII Flowchart</b></div><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: text; gutter: false; theme: RDark" data-theme="RDark">[ 报错: Wish Command Failed ]
+          |
+          V
+   &lt; 错误代码是什么? &gt;
+     |
+     +-- [ Code 5: RESOLVE_ERROR ]
+     |      |
+     |      V
+     |   [ 运行: wish + ... ] ---&gt; &lt; 分析 [Relation and Error Info] &gt;
+     |                               |
+     |                               +-- missing     --&gt; [ 检查仓库/版本拼写 ]
+     |                               |
+     |                               +-- conflict    --&gt; [ 检查 ban/xor 规则 ]
+     |                               |
+     |                               +-- unavailable --&gt; [ 检查 ava 平台条件 ]
+     |
+     +-- [ Code 3: NETWORK_ERROR ]
+     |      |
+     |      V
+     |   [ 检查 VPN/DNS ] ---&gt; &lt; 恢复? &gt; -- NO --&gt; [ 检查 HTTP_PROXY ]
+     |
+     +-- [ Code 255: UNDEFINED ]
+            |
+            V
+         [ 提交 Bug 报告 ]</pre>
+</div></div>
+
+
+
+<h2 id="id-故障排查与诊断指南-1.诊断工具箱(DiagnosticToolkit)">1. 诊断工具箱 (Diagnostic Toolkit)</h2>
+<p>在通过各种渠道寻求帮助前，请先掌握以下三个核心调试工具：</p>
+
+<h3 id="id-故障排查与诊断指南-1.1详细模式(VerboseMode)">1.1 详细模式 (Verbose Mode)</h3>
+<p>这是最强大的调试工具。通过将命令中的分隔符 <code>-</code> 替换为 <code>+</code>，Wish 会输出详细的执行日志。</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: bash; gutter: false; theme: Confluence" data-theme="Confluence">
+# 普通模式（静默）
+wish python=3.10 - python script.py
+
+# 详细模式（调试）
+wish python=3.10 + python script.py
+</pre>
+</div></div>
+<p><strong>日志包含的关键信息：</strong></p>
+<ul>
+<li><strong>Setup Path</strong>: 正在加载哪个具体的 <code>package.py</code> 文件。</li>
+<li><strong>Relation Info</strong>: 依赖关系图及求解器的决策过程。</li>
+<li><strong>Execution Time</strong>: 各阶段耗时，用于性能分析。</li>
+</ul>
+
+<h3 id="id-故障排查与诊断指南-1.2打印调试(PrintDebugging)">1.2 打印调试 (Print Debugging)</h3>
+<p>由于 <code>package.py</code> 是标准 Python 代码，你可以在其中插入打印语句来调试执行逻辑。建议输出到 <code>stderr</code> 以避免干扰管道操作。</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence">
+import sys
+# 在 package.py 中
+sys.stderr.write(f&quot;DEBUG: Loaded {this.name}, init={this.init}\n&quot;)
+</pre>
+</div></div>
+
+<h3 id="id-故障排查与诊断指南-1.3开发者模式(DevelopMode)">1.3 开发者模式 (Develop Mode)</h3>
+<p>如果你正在开发一个新的包，可以使用 <code>WISH_DEVELOP_MODE=1</code> 并配合 <code>WISH_DEVELOP_PATH</code> 来优先加载本地未发布的包。</p>
+
+<h2 id="id-故障排查与诊断指南-2.核心流程诊断">2. 核心流程诊断</h2>
+
+<h3 id="id-故障排查与诊断指南-2.1解析阶段故障(ResolutionPhase)">2.1 解析阶段故障 (Resolution Phase)</h3>
+<p><strong>症状</strong>: 报错 <code>RESOLVE_ERROR</code>，提示 &quot;Cannot resolve conditions&quot;。</p>
+<p><strong>深度分析日志</strong>:</p>
+<p>在 <code>wish +</code> 的输出中，寻找 <code>[Relation and Error Info]</code> 块。这是一个 JSON 结构的转储。</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: java; gutter: false; theme: Confluence" data-theme="Confluence">
+[Relation and Error Info]
+{
+  (&#39;my-tool&#39;, &#39;1.0&#39;): {
+    &#39;req&#39;: [&#39;lib-a&gt;=2.0&#39;],
+    &#39;error&#39;: {
+      &#39;missing&#39;: [&#39;lib-a&#39;] 
+    }
+  }
+}
+</pre>
+</div></div>
+<p><strong>常见错误类型解读</strong>:</p>
+<ul>
+<li><strong>missing</strong>:
+    <ul>
+    <li><strong>原因 1</strong>: 依赖包在仓库中完全不存在。 -&gt; <em>运行 <code>wish search lib-a</code> 确认。</em></li>
+    <li><strong>原因 2</strong>: 存在该包，但没有版本满足约束（如仓库里只有 1.0，你要求 &gt;=2.0）。 -&gt; <em>检查版本约束。</em></li>
+    <li><strong>原因 3</strong>: 平台不匹配（Linux 上找不到 Windows 包）。 -&gt; <em>检查 <code>ava</code> 条件。</em></li>
+    </ul>
+</li>
+<li><strong>conflict</strong>:
+    <ul>
+    <li><strong>原因</strong>: 显式的 <code>ban()</code> 规则或 <code>xor()</code> 互斥被触发。</li>
+    <li><strong>排查</strong>: 向上追溯，看是谁引入了冲突的包。</li>
+    </ul>
+</li>
+</ul>
+
+<h3 id="id-故障排查与诊断指南-2.2同步阶段故障(SyncPhase)">2.2 同步阶段故障 (Sync Phase)</h3>
+<p><strong>症状</strong>: <code>NETWORK_ERROR</code> 或下载卡顿。</p>
+<p><strong>排查步骤</strong>:</p>
+<ol>
+<li><strong>检查 API 连接</strong>: <code>curl $WISH_RESTAPI_URL/api/hello</code></li>
+<li><strong>检查 ETag</strong>: 如果日志显示不断重复下载同一个包，可能是服务端 ETag 配置错误或本地 SQLite 缓存文件损坏。尝试删除 <code>~/.wish/caches/manifest.db</code>。</li>
+<li><strong>锁文件僵死</strong>: 如果一直卡在 &quot;Wait 1s for download...&quot;，检查 <code>WISH_PACKAGE_PATH</code> 下是否有残留的 <code>.lock</code> 文件并手动删除。</li>
+</ol>
+
+<h3 id="id-故障排查与诊断指南-2.3执行阶段故障(ExecutionPhase)">2.3 执行阶段故障 (Execution Phase)</h3>
+<p><strong>症状</strong>: Wish 成功退出，但后续命令报错（如 <code>Command not found</code> 或 <code>ImportError</code>）。</p>
+<p><strong>原因</strong>: 环境变量未正确设置。</p>
+<p><strong>排查方法</strong>:</p>
+<p>进入交互式 Shell 检查实际环境：</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: bash; gutter: false; theme: Confluence" data-theme="Confluence">
+# 1. 进入环境 shell
+wish my-pkg - bash
+
+# 2. 检查关键变量
+echo $PATH
+echo $PYTHONPATH
+
+# 3. 检查包路径
+ls -l /path/to/my-pkg
+</pre>
+</div></div>
+<p><strong>常见陷阱</strong>:</p>
+<ul>
+<li>使用了 <code>append</code> 而不是 <code>insert</code>，导致系统自带的旧版本库被优先加载。</li>
+<li><code>package.py</code> 中使用了相对路径而不是 <code>this.root</code>。</li>
+</ul>
+
+
+<h3 id="id-故障排查与诊断指南-2.4环境继承诊断(EnvironmentInheritance)">2.4 环境继承诊断 (Environment Inheritance)</h3>
+<p><strong>症状 A</strong>: &quot;为什么我的子环境里有父环境的包？&quot; (环境污染)</p>
+<ul>
+    <li><strong>原因</strong>: <code>WISH_INHERIT_MODE</code> 可能被意外设置为 &quot;1&quot;。</li>
+    <li><strong>检查</strong>: 运行 <code>echo $WISH_INHERIT_MODE</code>。</li>
+    <li><strong>修复</strong>: 显式设置 <code>env(&quot;WISH_INHERIT_MODE&quot;).setenv(&quot;0&quot;)</code> 在你的 package.py 中，或在命令行 <code>unset WISH_INHERIT_MODE</code>。</li>
+</ul>
+
+<p><strong>症状 B</strong>: &quot;为什么我的宿主插件丢失了？&quot; (过度隔离)</p>
+<ul>
+    <li><strong>原因</strong>: 这是一个常见陷阱。Wish 默认 (<code>mode=0</code>) 会通过 <code>clear_inherit</code> 机制清理掉所有未显式声明的父环境路径。</li>
+    <li><strong>修复</strong>: 参照 <a href="http://conf.wish.net/pages/viewpage.action?pageId=6488078" rel="nofollow">最佳实践</a> 中的 &quot;环境穿透模式&quot;，开启继承模式。</li>
+</ul>
+
+<h2 id="id-故障排查与诊断指南-3.错误代码速查表">3. 错误代码速查表</h2>
+<div class="table-wrap"><table class="confluenceTable">
+<thead>
+<tr>
+<th class="confluenceTh">代码</th>
+<th class="confluenceTh">错误名称</th>
+<th class="confluenceTh">典型症状</th>
+<th class="confluenceTh">潜在根因 (Root Cause)</th>
+<th class="confluenceTh">修复建议 (Action)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="confluenceTd"><strong>1</strong></td>
+<td class="confluenceTd"><code>NO_PARAM</code></td>
+<td class="confluenceTd">仅输出帮助信息</td>
+<td class="confluenceTd">用户未提供包名参数</td>
+<td class="confluenceTd">检查命令格式，如 <code>wish python</code></td>
+</tr>
+<tr>
+<td class="confluenceTd"><strong>2</strong></td>
+<td class="confluenceTd"><code>CONFIG_ERROR</code></td>
+<td class="confluenceTd"><code>SyntaxError</code> 或解析失败</td>
+<td class="confluenceTd"><code>package.py</code> 语法错误或包含非法 Python 代码</td>
+<td class="confluenceTd">检查 <code>package.py</code> 语法，确保没有使用未导入的模块</td>
+</tr>
+<tr>
+<td class="confluenceTd"><strong>3</strong></td>
+<td class="confluenceTd"><code>NETWORK_ERROR</code></td>
+<td class="confluenceTd">&quot;Can not resolve network&quot;</td>
+<td class="confluenceTd">所有 API 节点及备用节点均不可达</td>
+<td class="confluenceTd">1. 检查网络连接<br/>2. 检查 <code>WISH_RESTAPI_URL</code> 配置<br/>3. 尝试离线模式 <code>WISH_OFFLINE_MODE=1</code></td>
+</tr>
+<tr>
+<td class="confluenceTd"><strong>4</strong></td>
+<td class="confluenceTd"><code>SPECPATH_ERROR</code></td>
+<td class="confluenceTd">&quot;Specified path error&quot;</td>
+<td class="confluenceTd">指定的本地路径不存在或无 <code>package.py</code></td>
+<td class="confluenceTd">确认 <code>pkg@/path/to/pkg</code> 路径正确且包含 <code>package.py</code></td>
+</tr>
+<tr>
+<td class="confluenceTd"><strong>5</strong></td>
+<td class="confluenceTd"><code>RESOLVE_ERROR</code></td>
+<td class="confluenceTd">&quot;Cannot resolve conditions&quot;</td>
+<td class="confluenceTd">依赖冲突，SAT 求解器无解</td>
+<td class="confluenceTd">使用 <code>wish +</code> 查看详细冲突信息，分析 missing/conflict 原因</td>
+</tr>
+<tr>
+<td class="confluenceTd"><strong>6</strong></td>
+<td class="confluenceTd"><code>PENDING_ERROR</code></td>
+<td class="confluenceTd">&quot;Failed to auto-activate extension&quot;</td>
+<td class="confluenceTd"><code>ext</code> 扩展包的触发条件 (<code>ava</code>) 未满足</td>
+<td class="confluenceTd">1. 检查 <code>ext</code> 包的 <code>ava</code> 条件<br/>2. 确认主环境是否满足扩展要求</td>
+</tr>
+<tr>
+<td class="confluenceTd"><strong>255</strong></td>
+<td class="confluenceTd"><code>UNDEFINED</code></td>
+<td class="confluenceTd">未知错误</td>
+<td class="confluenceTd">内部逻辑异常或未捕获的 Python 异常</td>
+<td class="confluenceTd">开启 <code>wish + ...</code> 获取完整堆栈并提交 Bug Report</td>
+</tr>
+</tbody>
+</table></div>
+
+<h2 id="id-故障排查与诊断指南-4.运维故障排查">4. 运维故障排查</h2>
+<h3 id="id-故障排查与诊断指南-4.1缓存清理">4.1 缓存清理</h3>
+<p>如果遇到文件损坏或校验错误，可以尝试清理本地缓存。</p>
+<ul>
+<li><strong>自动清理</strong>: <code>DBManage</code> 会自动清理超过 <strong>30 天</strong> 未使用的包。</li>
+<li><strong>手动清理</strong>: 删除 <code>WISH_STORAGE_PATH</code> (默认 <code>~/.wish/caches</code>) 下的对应目录。</li>
+</ul>
+
+<h3 id="id-故障排查与诊断指南-4.2高可用验证">4.2 高可用验证</h3>
+<p>验证 API 故障转移机制：</p>
+<ol>
+<li>设置 <code>WISH_RESTAPI_URL</code> 为一个无效地址 (如 <code>http://0.0.0.0</code>)。</li>
+<li>设置 <code>WISH_RESTAPI_URL1</code> 为有效地址。</li>
+<li>运行 <code>wish + python</code>。</li>
+<li>观察日志，应看到 &quot;Network error, try next...&quot; 类似字样，随后连接成功。</li>
+</ol>
+
+<h2 id="id-故障排查与诊断指南-5.寻求支持">5. 寻求支持</h2>
+<p>如果上述步骤无法解决问题，请准备以下信息并联系开发团队：</p>
+<ol>
+<li><strong>复现命令</strong> (完整的 <code>wish + ...</code> 命令)。</li>
+<li><strong>完整日志</strong> (包含 <code>[Relation and Error Info]</code>)。</li>
+<li><strong>当前环境</strong> (操作系统、Wish 版本、Python 版本)。</li>
+</ol>
+                    </div>
+
+                                        
+                                                      
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on 1月 25, 2026 18:29</p>
+                    <div id="footer-logo"><a href="https://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

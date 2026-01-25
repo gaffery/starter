@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>WISH : Package 编写完全指南</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">WISH</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="6488074.html">产品主页</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            WISH : Package 编写完全指南
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+    
+        
+    
+        
+        
+            Created by <span class='author'> root</span>, last modified on 1月 25, 2026
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Package编写完全指南-Package编写完全指南">Package 编写完全指南</h1><p>本文档详细介绍如何编写 wishtools 的包配置文件 <code>package.py</code>。这是定义环境的核心，支持强大的 DSL（领域特定语言）。</p><h2 id="Package编写完全指南-1.核心概念：静态声明vs动态执行">1. 核心概念：静态声明 vs 动态执行</h2><p><strong>⚠️ 至关重要：理解 WISH 的解析机制</strong></p><p>WISH 的 <code>package.py</code> 解析分为两个完全独立的阶段：</p><p>1. <strong>静态解析阶段 (Parsing Phase)</strong>:</p><ul><li><strong>机制</strong>: 使用 Python 的 <code>ast</code> 模块对代码进行<strong>静态分析</strong>。</li></ul><ul><li><strong>行为</strong>: 提取 <code>req</code>, <code>ava</code>, <code>ban</code>, <code>xor</code>, <code>alt</code>, <code>ext</code> 等 DSL 关键字的参数。</li></ul><ul><li><strong>限制</strong>: <strong>完全忽略</strong> Python 的控制流语句（如 <code>if</code>, <code>for</code>, <code>try</code>）。</li></ul><ul><li><strong>陷阱</strong>: 即使你写在 <code>if False:</code> 块中的 <code>req()</code>，也会被解析器提取并生效！</li></ul><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence">    import sys
+    
+    # ❌ 错误示例：试图用 Python 逻辑控制依赖
+    if sys.platform == &quot;win32&quot;:
+        req(&quot;windows-only-lib&quot;) # 😱 错误！即使在 Linux 上，这行也会被解析器抓取！
+    
+    # ✅ 正确示例：使用 DSL 原语控制依赖
+    # 让 WISH 的求解器来处理平台判断
+    req(&quot;windows-only-lib&quot;)
+    ava(&quot;platform=windows&quot;) # 只有在 Windows 平台，这个包才会被认为是&quot;可用&quot;的
+</pre>
+</div></div><p>2. <strong>动态执行阶段 (Execution Phase)</strong>:</p><ul><li><strong>机制</strong>: 在环境构建完成后，使用 Python 的 <code>exec()</code> 执行 <code>package.py</code>。</li></ul><ul><li><strong>行为</strong>: 执行 <code>env()</code>, <code>alias()</code>, <code>print()</code> 以及其他标准 Python 代码。</li></ul><ul><li><strong>能力</strong>: 此时可以访问完整的 <code>this</code> 上下文和文件系统，进行环境变量注入、文件拷贝等操作。</li></ul><p>---</p><h2 id="Package编写完全指南-2.文件结构与规范">2. 文件结构与规范</h2><p>每个包版本目录下必须包含 <code>package.py</code>：</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: java; gutter: false; theme: Confluence" data-theme="Confluence">packages/
+└── &lt;package_name&gt;/
+    └── &lt;version_tag&gt;/
+        ├── package.py      # [必须] 包定义逻辑
+        ├── src/            # [建议] 源代码或二进制
+        └── LICENSE         # [可选]
+</pre>
+</div></div><h2 id="Package编写完全指南-2.内置对象详解">2. 内置对象详解</h2><h3 id="Package编写完全指南-2.1this对象">2.1 this 对象</h3><p><code>this</code> 对象提供了当前包的上下文信息。</p><div class="table-wrap"><table class="wrapped confluenceTable"><tbody><tr><td class="confluenceTd">属性/方法</td><td class="confluenceTd">类型</td><td class="confluenceTd">说明</td><td class="confluenceTd">示例</td></tr></tbody></table></div><div class="table-wrap"><table class="wrapped confluenceTable"><tbody><tr><td class="confluenceTd">:---</td><td class="confluenceTd">:---</td><td class="confluenceTd">:---</td><td class="confluenceTd">:---</td></tr></tbody></table></div><div class="table-wrap"><table class="wrapped confluenceTable"><tbody><tr><td class="confluenceTd"><code>this.name</code></td><td class="confluenceTd">str</td><td class="confluenceTd">包名称</td><td class="confluenceTd"><code>&quot;python&quot;</code></td></tr></tbody></table></div><div class="table-wrap"><table class="wrapped confluenceTable"><tbody><tr><td class="confluenceTd"><code>this.tags</code></td><td class="confluenceTd">str</td><td class="confluenceTd">版本标签</td><td class="confluenceTd"><code>&quot;3.10.6.1.lin.0&quot;</code></td></tr></tbody></table></div><div class="table-wrap"><table class="wrapped confluenceTable"><tbody><tr><td class="confluenceTd"><code>this.root</code></td><td class="confluenceTd">str</td><td class="confluenceTd">包的绝对路径</td><td class="confluenceTd"><code>/opt/packages/python/3.10...</code></td></tr></tbody></table></div><div class="table-wrap"><table class="wrapped confluenceTable"><tbody><tr><td class="confluenceTd"><code>this.init</code></td><td class="confluenceTd">bool</td><td class="confluenceTd">是否首次初始化</td><td class="confluenceTd"><code>True</code> 或 <code>False</code></td></tr></tbody></table></div><h3 id="Package编写完全指南-2.2env()函数">2.2 env() 函数</h3><p><code>env(name)</code> 返回环境变量操作对象。支持链式调用，修改仅在当前 Wish 会话中生效。</p><p><strong>优先级规则</strong>:</p><p>环境变量是列表结构（以 <code>:</code> 或 <code>;</code> 分隔）。操作顺序决定了查找优先级。</p><div class="table-wrap"><table class="wrapped confluenceTable"><tbody><tr><td class="confluenceTd">方法</td><td class="confluenceTd">行为</td><td class="confluenceTd">优先级</td><td class="confluenceTd">适用场景</td></tr></tbody></table></div><div class="table-wrap"><table class="wrapped confluenceTable"><tbody><tr><td class="confluenceTd">:---</td><td class="confluenceTd">:---</td><td class="confluenceTd">:---</td><td class="confluenceTd">:---</td></tr></tbody></table></div><div class="table-wrap"><table class="wrapped confluenceTable"><tbody><tr><td class="confluenceTd"><code>insert(*paths)</code></td><td class="confluenceTd"><strong>头部插入</strong></td><td class="confluenceTd"><strong>High</strong> (最先被搜索)</td><td class="confluenceTd">主程序 <code>bin</code> 目录、优先使用的库</td></tr></tbody></table></div><div class="table-wrap"><table class="wrapped confluenceTable"><tbody><tr><td class="confluenceTd"><code>append(*paths)</code></td><td class="confluenceTd"><strong>尾部追加</strong></td><td class="confluenceTd"><strong>Low</strong> (最后被搜索)</td><td class="confluenceTd">备用路径、默认系统路径</td></tr></tbody></table></div><div class="table-wrap"><table class="wrapped confluenceTable"><tbody><tr><td class="confluenceTd"><code>setenv(*val)</code></td><td class="confluenceTd"><strong>完全覆盖</strong></td><td class="confluenceTd">N/A</td><td class="confluenceTd">版本号变量、标记位</td></tr></tbody></table></div><p><strong>示例</strong>:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence"># 确保本包的 python 优先于系统自带的 python
+env(&quot;PATH&quot;).insert(os.path.join(this.root, &quot;bin&quot;))
+
+# 将 man 手册路径添加到末尾
+env(&quot;MANPATH&quot;).append(os.path.join(this.root, &quot;share&quot;, &quot;man&quot;))
+</pre>
+</div></div><h2 id="Package编写完全指南-3.依赖声明关键字">3. 依赖声明关键字</h2><h3 id="Package编写完全指南-3.0决策指南：我该用哪个关键字？">3.0 决策指南：我该用哪个关键字？</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>ASCII Flowchart</b></div><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: text; gutter: false; theme: RDark" data-theme="RDark">[ 起点: 我需要声明一个依赖 ]
+       |
+       V
+&lt; 必须有它才能运行? &gt;
+  |
+  +-- NO --&gt; &lt; 是可选插件? &gt;
+  |             |
+  |             +-- YES --&gt; [ ext() ]  (扩展依赖)
+  |             |
+  |             +-- NO  --&gt; [ ava() ]  (条件生效)
+  |
+  +-- YES --&gt; &lt; 需要互斥选择? &gt;
+                |
+                +-- YES --&gt; [ xor() ]  (二选一)
+                |
+                +-- NO  --&gt; &lt; 我提供通用接口? &gt;
+                              |
+                              +-- YES --&gt; [ alt() ]  (如 ssl-api)
+                              |
+                              +-- NO  --&gt; [ req() ]  (标准依赖)</pre>
+</div></div><h3 id="Package编写完全指南-3.1核心依赖(req/ava/ext)">3.1 核心依赖 (req / ava / ext)</h3><h4 id="Package编写完全指南-req(*pkgs)-必需依赖"><code>req(*pkgs)</code> - 必需依赖</h4><p>声明运行此包必须存在的依赖项。</p><ul><li><strong>解析时机</strong>: 静态解析阶段。</li><li><strong>逻辑</strong>: AND 关系。所有列出的包必须同时满足。</li></ul><ul><li><strong>示例</strong>: <code>req(&quot;python&gt;=3.9&quot;, &quot;numpy&quot;)</code></li></ul><h4 id="Package编写完全指南-ava(*conditions)-可用性条件(Availability)"><code>ava(*conditions)</code> - 可用性条件 (Availability)</h4><p>声明此包生效的前置条件。<strong>这是 WISH 中实现&quot;条件依赖&quot;的唯一方式。</strong></p><ul><li><strong>解析时机</strong>: 静态解析阶段。</li><li><strong>逻辑</strong>: OR 关系（只要满足任意一个条件组，包即视为可用）。</li></ul><ul><li><strong>常用模式</strong>:</li><li><strong>平台限制</strong>: <code>ava(&quot;platform=linux&quot;, &quot;arch=x86_64&quot;)</code></li></ul><ul><li><strong>宿主限制</strong>: <code>ava(&quot;maya&gt;=2022&quot;)</code> (仅当依赖图中已存在 Maya 2022+ 时，此包才生效)</li><li><strong>组合限制</strong>: <code>ava(&quot;platform=windows&quot;, &quot;maya&quot;)</code> (仅在 Windows 且有 Maya 时生效)</li></ul><h4 id="Package编写完全指南-ext(*pkgs)-扩展依赖"><code>ext(*pkgs)</code> - 扩展依赖</h4><p>声明可选的、后置注入的依赖项。</p><ul><li><strong>解析时机</strong>: 静态解析阶段。</li><li><strong>逻辑</strong>: 在主依赖树解析完成后，如果满足触发条件，则启动第二轮解析注入这些包。</li></ul><ul><li><strong>触发方式</strong>:</li><li><strong>环境变量</strong>: <code>WISH_PACKAGE_EXTRA=pkg_name</code></li></ul><ul><li><strong>魔法后缀</strong>: <code>ext(&quot;vray@maya&quot;)</code> (如果环境中存在 maya，自动注入 vray)</li></ul><h3 id="Package编写完全指南-3.2冲突与变体(ban/alt/xor)">3.2 冲突与变体 (ban / alt / xor)</h3><h4 id="Package编写完全指南-ban(*pkgs)-禁止冲突"><code>ban(*pkgs)</code> - 禁止冲突</h4><p>声明与当前包不兼容的包。</p><ul><li><strong>解析时机</strong>: 静态解析阶段。</li><li><strong>逻辑</strong>: NOT 关系。如果 banned 包存在，求解器会回溯并寻找其他解。</li></ul><ul><li><strong>示例</strong>: <code>ban(&quot;pillow&lt;9.0&quot;)</code> (如果依赖图中必须有旧版 pillow，则当前包无法安装)</li></ul><h4 id="Package编写完全指南-alt(*pkgs)-替代提供(Alternative)"><code>alt(*pkgs)</code> - 替代提供 (Alternative)</h4><p>声明当前包可以作为其他包的替代品。</p><ul><li><strong>解析时机</strong>: 静态解析阶段。</li><li><strong>逻辑</strong>: Fallback 机制。当被替代的包（如 <code>openssl</code>）在仓库中不存在或无法满足版本要求时，求解器会尝试使用当前包。</li></ul><ul><li><strong>示例</strong>: <code>alt(&quot;openssl==1.1.1&quot;)</code> (我不仅是我，我还是 openssl 1.1.1)</li></ul><h4 id="Package编写完全指南-xor(*pkgs)-互斥选择"><code>xor(*pkgs)</code> - 互斥选择</h4><p>声明一组必须且只能选择其一的依赖。</p><ul><li><strong>解析时机</strong>: 静态解析阶段。</li><li><strong>逻辑</strong>: XOR 关系。按顺序尝试，直到找到第一个不冲突的包。</li></ul><ul><li><strong>示例</strong>: <code>xor(&quot;PySide6&quot;, &quot;PyQt6&quot;)</code> (优先用 PySide6，不行就用 PyQt6，但绝不能两个都装)</li></ul>
+<h3 id="Package编写完全指南-3.3自动冲突消解(AutomaticResolution)">3.3 自动冲突消解 (Automatic Resolution)</h3>
+<p>Wish 的 SAT 求解器会自动处理传递性冲突。例如：</p>
+<ul>
+    <li>A 依赖 B=1.0</li>
+    <li>C 依赖 B=2.0</li>
+</ul>
+<p>如果用户请求 <code>wish A C</code>，求解器会立即报告 <strong>UNSATISFIABLE</strong>，而不会像 pip 那样&quot;后覆盖前&quot;导致运行时错误。开发者无需手动编写复杂的检查逻辑。</p>
+
+<h2 id="Package编写完全指南-4.高级模式(PowerUserPatterns)">4. 高级模式 (Power User Patterns)</h2><p><code>package.py</code> 不仅仅是一个配置文件，它是一个完整的 Python 运行环境。你可以利用 Python 的标准库和 <code>this</code> 对象的上下文来处理复杂的部署场景。</p><h3 id="Package编写完全指南-4.2动态硬件适配(DynamicHardwareAdaptation)">4.2 动态硬件适配 (Dynamic Hardware Adaptation)</h3><p>利用 Python 代码检测宿主机硬件特性（如 CPU 指令集），并据此调整环境变量。</p><p><strong>示例：根据 AVX512 支持情况加载优化库</strong></p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence">import os
+
+def has_cpu_flag(flag):
+    try:
+        with open(&#39;/proc/cpuinfo&#39;, &#39;r&#39;) as f:
+            for line in f:
+                if line.startswith(&#39;flags&#39;) and flag in line:
+                    return True
+    except:
+        pass
+    return False
+
+src_path = os.path.join(this.root, &quot;src&quot;)
+
+if has_cpu_flag(&quot;avx512&quot;):
+    print(&quot;🚀 Power User: AVX512 detected. Enabling ultra-fast kernels.&quot;)
+    env(&quot;LD_LIBRARY_PATH মলinsert(os.path.join(src_path, &quot;lib-avx512&quot;))
+elif has_cpu_flag(&quot;avx2&quot;):
+    print(&quot;⚡ Power User: AVX2 detected. Enabling optimized kernels.&quot;)
+    env(&quot;LD_LIBRARY_PATH&quot;).insert(os.path.join(src_path, &quot;lib-avx2&quot;))
+else:
+    print(&quot;⚠️ Power User: No advanced SIMD detected. Using generic kernels.&quot;)
+    env(&quot;LD_LIBRARY_PATH&quot;).insert(os.path.join(src_path, &quot;lib-generic&quot;))
+</pre>
+</div></div><h3 id="Package编写完全指南-4.3跨平台垫片(Cross-PlatformShim)">4.3 跨平台垫片 (Cross-Platform Shim)</h3><p>在同一个 <code>package.py</code> 中优雅地处理 Windows 和 Linux 的差异。</p><p><strong>注意</strong>：<code>ava</code>、<code>req</code> 等关键字是静态解析的，不受 <code>if</code> 语句控制。因此，不要尝试用 <code>if sys.platform:</code> 来包裹 <code>ava</code>，否则会导致包被同时标记为需要 Windows <strong>和</strong> Linux，从而无法解析。</p><p><strong>正确做法</strong>：使用 Python 动态逻辑来处理<strong>环境变量</strong>和<strong>别名</strong>，而保持依赖声明的通用性（或创建两个独立的包版本）。</p><p><strong>示例：统一的跨平台路径处理 (纯 Python 包或 NoArch 包)</strong></p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence">import sys
+import os
+
+# 动态配置变量（运行时生效）
+if sys.platform == &quot;win32&quot;:
+    # ava(&quot;platform=windows&quot;)  &lt;-- 不要在这里写！静态解析会无视 if！
+    # 如果必须区分平台包，请在文件系统中拆分为两个版本：
+    # packages/mytool/1.0.0.win/... 和 packages/mytool/1.0.0.lin/...
+    
+    bin_subdir = &quot;Scripts&quot;
+    lib_var = &quot;PATH&quot;
+    ext = &quot;.exe&quot;
+else:
+    bin_subdir = &quot;bin&quot;
+    lib_var = &quot;LD_LIBRARY_PATH&quot;
+    ext = &quot;&quot;
+
+# 应用配置
+bin_path = os.path.join(this.root, &quot;src&quot;, bin_subdir)
+lib_path = os.path.join(this.root, &quot;src&quot;, &quot;lib&quot;)
+
+env(&quot;PATH&quot;).insert(bin_path)
+env(lib_var).insert(lib_path)
+
+# 定义带后缀的别名
+alias(&quot;mytool&quot;, os.path.join(bin_path, f&quot;tool-core{ext}&quot;))
+</pre>
+</div></div><h3 id="Package编写完全指南-4.4首次运行钩子(First-RunHook)">4.4 首次运行钩子 (First-Run Hook)</h3><p><code>this.init</code> 属性在包第一次被加载到当前环境时为 <code>True</code>。你可以利用它执行耗时的初始化任务，如编译、解压或生成配置。</p><p><strong>示例：自动编译着色器或资源</strong></p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence">import os
+import subprocess
+
+if this.init:
+    print(&quot;🔨 Power User: First run detected. Initializing workspace...&quot;)
+    
+    compile_script = os.path.join(this.root, &quot;scripts&quot;, &quot;compile_assets.sh&quot;)
+    
+    if os.path.exists(compile_script):
+        # 执行初始化脚本
+        result = os.system(f&quot;bash {compile_script}&quot;)
+        if result == 0:
+            print(&quot;✨ Assets compiled successfully.&quot;)
+        else:
+            print(&quot;❌ Asset compilation failed.&quot;)
+</pre>
+</div></div><h2 id="Package编写完全指南-5.辅助函数与别名(Helpers&amp;Aliases)">5. 辅助函数与别名 (Helpers &amp; Aliases)</h2><h3 id="Package编写完全指南-5.1alias()-命令别名">5.1 alias() - 命令别名</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence"># 将包内的 python 映射为全局命令 py
+alias(&quot;py&quot;, &quot;python&quot;)
+
+# 映射到具体文件
+alias(&quot;mytool&quot;, os.path.join(this.root, &quot;bin&quot;, &quot;tool&quot;))
+</pre>
+</div></div><p>更多设计模式请参考 <a href="http://conf.wish.net/best-practices.md" rel="nofollow">🛡️ 最佳实践</a>。</p><h2 id="Package编写完全指南-6.实战代码模板(Real-WorldPatterns)">6. 实战代码模板 (Real-World Patterns)</h2><h3 id="Package编写完全指南-6.1Python库(PyPI风格)">6.1 Python 库 (PyPI 风格)</h3><p>对于纯 Python 库，通常只需要将源码目录加入 <code>PYTHONPATH</code>。</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence"># type: ignore
+import os
+
+# 1. 声明依赖 (映射自 requirements.txt)
+req(&quot;requests&gt;=2.0&quot;)
+req(&quot;numpy&quot;)
+
+# 2. 导出 Python 路径
+# 假设源码解压在 src/ 目录下
+env(&quot;PYTHONPATH&quot;).insert(os.path.join(this.root, &quot;src&quot;))
+</pre>
+</div></div><h3 id="Package编写完全指南-6.2应用程序与服务(App/Service)">6.2 应用程序与服务 (App/Service)</h3><p>对于大型应用（如 Neo4j, Java），通常需要配置 HOME 变量和 PATH。</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence">import os
+
+# 1. 运行时依赖
+req(&quot;java&gt;=11&quot;)
+
+# 2. 定义关键路径
+home_path = os.path.join(this.root, &quot;src&quot;)
+bin_path = os.path.join(home_path, &quot;bin&quot;)
+conf_path = os.path.join(home_path, &quot;conf&quot;)
+
+# 3. 设置环境变量
+env(&quot;APP_HOME&quot;).setenv(home_path)
+env(&quot;APP_CONF&quot;).setenv(conf_path)
+env(&quot;PATH&quot;).insert(bin_path)
+</pre>
+</div></div><h3 id="Package编写完全指南-6.3插件自动注入(TheTriggerPattern)">6.3 插件自动注入 (The Trigger Pattern)</h3><p>利用 <code>ext(&quot;plugin@host&quot;)</code> 语法，实现&quot;当宿主存在时，自动加载插件&quot;的反转控制模式。</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence"># package: ayon-init/package.py
+import os
+
+# 基础依赖
+req(&quot;requests&quot;)
+
+# 魔法扩展：
+# 只有当依赖图中解析出 &quot;maya&quot; 包时，才会尝试加载 &quot;ayon-init-maya&quot;
+ext(&quot;ayon-init-maya@maya&quot;)
+
+# 只有当依赖图中解析出 &quot;nuke&quot; 包时，才会尝试加载 &quot;ayon-init-nuke&quot;
+ext(&quot;ayon-init-nuke@nuke&quot;)
+</pre>
+</div></div><p>这种模式允许一个初始化包适配多种宿主，而无需强依赖它们。</p><h3 id="Package编写完全指南-6.4系统桥接与回退(SystemBridge)">6.4 系统桥接与回退 (System Bridge)</h3><p>你可以编写一个&quot;垫片包&quot;，优先尝试使用宿主机已安装的软件，如果不存在则回退到 Wish 管理的版本。</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence"># package: blender-launcher/package.py
+import os
+
+alt(&quot;blender=5.0&quot;)
+
+sys_path = r&quot;C:\Program Files\Blender Foundation\Blender 5.0&quot;
+
+if os.path.exists(sys_path):
+    env(&quot;PATH&quot;).insert(sys_path)
+    alias(&quot;blender&quot;, &quot;blender --python-use-system-env&quot;)
+else:
+    # 开启环境继承模式，防止插件环境丢失
+    env(&quot;WISH_INHERIT_MODE&quot;).setenv(&quot;1&quot;)
+    alias(&quot;blender&quot;, &quot;wish blender=5.0 + blender&quot;)
+</pre>
+</div></div><div class="confluence-information-macro confluence-information-macro-information"><span class="aui-icon aui-icon-small aui-iconfont-info confluence-information-macro-icon"></span><div class="confluence-information-macro-body"><p><strong>关于环境继承 (Environment Inheritance)</strong></p><p>当触发回退机制（递归调用 <code>wish</code>）时，子进程会<strong>继承</strong>父进程的所有环境变量。这是一个特性而非 Bug：它保证了用户的基础工具（如 <code>git</code>, <code>vim</code>）在子环境中依然可用。但在深层嵌套调用时，需留意 <code>PYTHONPATH</code> 等累加型变量可能带来的干扰。</p></div></div><h3 id="Package编写完全指南-6.6Python模块化工具模式(ThePythonModulePattern)">6.6 Python 模块化工具模式 (The Python Module Pattern)</h3><p><strong>场景</strong>：开发一个既可以用作命令行工具 (CLI)，又可以被其他 Python 脚本导入作为库使用的包（如 <code>confflow</code>）。</p><p><strong>实现</strong>：采用标准 Python 包结构，利用 <code>__main__.py</code> 作为入口，并在 <code>package.py</code> 中配置 <code>PYTHONPATH</code>。</p><p><strong>目录结构</strong>:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: java; gutter: false; theme: Confluence" data-theme="Confluence">confflow/
+├── package.py
+└── src/
+    └── confflow/
+        ├── __init__.py    # 导出 API (get_page, ...)
+        ├── __main__.py    # CLI 入口 (argparse logic)
+        └── client.py      # 核心逻辑
+</pre>
+</div></div><p><strong>Package.py 配置</strong>:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: python; gutter: false; theme: Confluence" data-theme="Confluence"># package: confflow/package.py
+import os
+
+req(&quot;python&gt;=3.6&quot;)
+
+# 1. 暴露源码目录到 PYTHONPATH
+# 这样用户既可以 `import confflow`，也可以 `python -m confflow`
+env(&quot;PYTHONPATH&quot;).insert(os.path.join(this.root, &quot;src&quot;))
+
+# 2. 设置可覆盖的默认配置
+if not env(&quot;CONFLUENCE_URL&quot;).getenv():
+    env(&quot;CONFLUENCE_URL&quot;).setenv(&quot;http://default.url&quot;)
+
+# 3. 定义别名调用模块
+# 相比直接调用脚本，这种方式更符合 Python 规范
+alias(&quot;confflow&quot;, &quot;python3 -m confflow&quot;)
+alias(&quot;confluence-help&quot;, &quot;python3 -m confflow --help&quot;)
+</pre>
+</div></div><p style="color: gray;font-size: 0.8em;"><br/></p>
+<h2 id="Package编写完全指南-7.Gitflow包发布流程(TheGitflowWorkflow)">7. Gitflow 包发布流程 (The Gitflow Workflow)</h2>
+<p>在企业级环境中，我们推荐使用 <code>gitflow</code> 包来管理 Wish 包的版本发布。它实现了代码与大文件 (LFS) 的分离管理。</p>
+
+<h3 id="Package编写完全指南-7.1核心机制">7.1 核心机制</h3>
+<ul>
+    <li><strong>自动化仓库初始化</strong>: 自动处理 <code>git init</code> 和 <code>remote add</code>，且默认使用 SSH 协议进行鉴权（需配置 <code>~/.ssh/id_ed25519</code>）。</li>
+    <li><strong>智能 LFS 分离</strong>: 
+        <ul>
+            <li>在提交前，Gitflow 会扫描目录，自动将超过 50MB 的文件夹打包为 <code>.pkgs</code> 格式。</li>
+            <li>大文件会被上传到 MinIO (通过 <code>WISH_LFS_URL</code>)，而在 Git 仓库中仅保留轻量级的索引文件 <code>.pkgi</code> (包含 ETag 和路径)。</li>
+        </ul>
+    </li>
+    <li><strong>一键发布</strong>: 自动执行分支创建、代码提交和推送，大幅简化了发布流程。</li>
+</ul>
+
+<h3 id="Package编写完全指南-7.2使用范式">7.2 使用范式</h3>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: bash; gutter: false; theme: Confluence" data-theme="Confluence">
+# 1. 确保开发模式开启
+export WISH_DEVELOP_MODE=1
+
+# 2. 使用 gitflow 推送包
+# -d: 包所在的本地开发目录
+# -g: GitLab 组名 (如 extra, tool)
+# -p: 项目名称
+wish gitflow - gitflow -d /path/to/my-pkg -g extra -p my-pkg
+</pre>
+</div></div>
+
+<div class="confluence-information-macro confluence-information-macro-information"><span class="aui-icon aui-icon-small aui-iconfont-info confluence-information-macro-icon"></span><div class="confluence-information-macro-body">
+<p><strong>注意：</strong> <code>gitflow</code> 默认使用 SSH 协议连接 GitLab (`gitlab@gitlab.wish.net:group/project.git`)，请确保本地 SSH Key 已配置且拥有对应组的写权限。不要尝试在命令行中使用 HTTP Token 进行推送。</p>
+</div></div>
+                    </div>
+
+                                        
+                                                      
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on 1月 25, 2026 18:29</p>
+                    <div id="footer-logo"><a href="https://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

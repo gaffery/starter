@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>WISH : 架构设计文档</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">WISH</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="6488074.html">产品主页</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            WISH : 架构设计文档
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+    
+        
+    
+        
+        
+            Created by <span class='author'> root</span>, last modified on 1月 25, 2026
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="id-架构设计文档-架构设计文档">架构设计文档</h1>
+<p>本文档深入解析 Wishtools 的内部架构、设计理念和关键算法。</p>
+
+<style type='text/css'>/*<![CDATA[*/
+div.rbtoc1769336983034 {padding: 0px;}
+div.rbtoc1769336983034 ul {margin-left: 0px;}
+div.rbtoc1769336983034 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1769336983034'>
+<ul class='toc-indentation'>
+<li><a href='#id-架构设计文档-架构设计文档'>架构设计文档</a>
+<ul class='toc-indentation'>
+<li><a href='#id-架构设计文档-1.设计理念'>1. 设计理念</a></li>
+<li><a href='#id-架构设计文档-2.系统分层架构'>2. 系统分层架构</a>
+<ul class='toc-indentation'>
+<li><a href='#id-架构设计文档-2.1各层职责详解'>2.1 各层职责详解</a></li>
+</ul>
+</li>
+<li><a href='#id-架构设计文档-3.核心引擎：双模解析机制'>3. 核心引擎：双模解析机制</a>
+<ul class='toc-indentation'>
+<li><a href='#id-架构设计文档-3.1静态解析引擎(ASTEngine)'>3.1 静态解析引擎 (AST Engine)</a></li>
+<li><a href='#id-架构设计文档-3.2动态执行引擎(RuntimeEngine)'>3.2 动态执行引擎 (Runtime Engine)</a></li>
+</ul>
+</li>
+<li><a href='#id-架构设计文档-4.运行时生命周期(RuntimeLifecycle)'>4. 运行时生命周期 (Runtime Lifecycle)</a></li>
+<li><a href='#id-架构设计文档-5.关键算法：SAT求解与权重'>5. 关键算法：SAT 求解与权重</a>
+<ul class='toc-indentation'>
+<li><a href='#id-架构设计文档-5.1SAT问题建模'>5.1 SAT 问题建模</a></li>
+<li><a href='#id-架构设计文档-5.2权重公式'>5.2 权重公式</a></li>
+</ul>
+</li>
+<li><a href='#id-架构设计文档-6.数据流向(DataFlow)'>6. 数据流向 (Data Flow)</a></li>
+<li><a href='#id-架构设计文档-7.扩展性设计'>7. 扩展性设计</a></li>
+<li><a href='#id-架构设计文档-8.深度解析：Syncer同步机制'>8. 深度解析：Syncer 同步机制</a>
+<ul class='toc-indentation'>
+<li><a href='#id-架构设计文档-8.1最小化传输算法'>8.1 最小化传输算法</a></li>
+<li><a href='#id-架构设计文档-8.2高可用轮询(Client-SideHA)'>8.2 高可用轮询 (Client-Side HA)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+
+<h2 id="id-架构设计文档-1.设计理念">1. 设计理念</h2>
+<p>Wishtools 的设计不仅是为了解决依赖管理，更是为了构建一个<strong>制品血缘追踪系统 (Artifact Lineage System)</strong>。其核心设计原则包括：</p>
+<ul>
+<li><strong>一切皆包 (Everything is a Package)</strong>: 工具、库、配置、甚至 Wish 自身都是统一管理的节点。</li>
+<li><strong>声明与执行分离 (Separation of Declaration and Execution)</strong>: 静态 AST 解析用于构建依赖图，动态 Python 运行时用于构建环境。</li>
+<li><strong>确定性解析 (Deterministic Resolution)</strong>: 使用 SAT 求解器替代传统的贪心算法，确保全局最优解。</li>
+<li><strong>环境非侵入 (Non-Intrusive)</strong>: 仅修改内存中的环境变量，绝不污染宿主机系统文件。</li>
+</ul>
+
+<h2 id="id-架构设计文档-2.系统分层架构">2. 系统分层架构</h2>
+<p>Wish 采用典型的分层架构设计，各层职责清晰，通过标准接口通信。</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: java; gutter: false; theme: Confluence" data-theme="Confluence">
++---------------------------------------------------------------+
+|                  用户交互层 (User Interface Layer)            |
+|  [ CLI (wish) ]      [ Launcher (GUI) ]      [ Agent (LLM) ]  |
++-------------------------------+-------------------------------+
+                                |
+                                v
++---------------------------------------------------------------+
+|                   核心逻辑层 (Core Logic Layer)               |
+|                                                               |
+|   [ 依赖解析器 Resolver ] &lt;-----&gt; [ 执行引擎 Executor ]       |
+|         | (SAT Solver)                  | (Python Runtime)    |
+|         v                               v                     |
+|   [ 静态分析器 Parser ]           [ 环境管理器 Context ]      |
+|     (AST Extraction)                (Environ / Thispath)      |
++-------------------------------+-------------------------------+
+                                |
+                                v
++---------------------------------------------------------------+
+|                   数据访问层 (Data Access Layer)              |
+|                                                               |
+|   [ 同步器 Syncer ] &lt;---------&gt; [ 缓存管理 Cache Manager ]    |
+|      (HTTP/S3)                      (SQLite / FS)             |
+|                                                               |
+|   [ 并发控制 Locker ]                                         |
++-------------------------------+-------------------------------+
+                                |
+                                v
++---------------------------------------------------------------+
+|                   基础设施层 (Infrastructure Layer)           |
+|                                                               |
+|   [ 图数据库 Graph DB ] &lt;-----&gt; [ 元数据 API Metadata ]       |
+|         (Relationships)                 (REST)                |
+|                                                               |
+|   [ 制品存储 Artifact Store ]                                 |
+|         (S3 / MinIO)                                          |
++---------------------------------------------------------------+
+</pre>
+</div></div>
+
+<h3 id="id-架构设计文档-2.1各层职责详解">2.1 各层职责详解</h3>
+<ul>
+<li><strong>用户交互层</strong>: 负责接收用户指令。CLI 是最基础的入口，Launcher 提供图形化操作，Agent 接口支持自然语言交互。</li>
+<li><strong>核心逻辑层 (Kernel)</strong>: 系统的&quot;大脑&quot;。
+    <ul>
+    <li><strong>Resolver</strong>: 负责将依赖关系转化为 SAT 问题并求解。</li>
+    <li><strong>Executor</strong>: 负责运行 <code>package.py</code> 中的动态逻辑。</li>
+    <li><strong>Parser</strong>: 使用 AST 提取静态依赖元数据。</li>
+    </ul>
+</li>
+<li><strong>数据访问层</strong>: 负责数据的获取与持久化。
+    <ul>
+    <li><strong>Syncer</strong>: 智能同步组件，负责从远程拉取元数据和文件，支持断点续传和 ETag 校验。</li>
+    <li><strong>Cache</strong>: 本地 SQLite 数据库加速查询，文件系统缓存 Artifacts。</li>
+    </ul>
+</li>
+<li><strong>基础设施层</strong>: 服务端组件。
+    <ul>
+    <li><strong>Graph DB</strong>: 存储复杂的包依赖与血缘关系。</li>
+    <li><strong>Artifact Store</strong>: 存储实际的二进制包文件。</li>
+    </ul>
+</li>
+</ul>
+
+<h2 id="id-架构设计文档-3.核心引擎：双模解析机制">3. 核心引擎：双模解析机制</h2>
+<p>Wish 的强大之处在于其独特的<strong>双模解析机制</strong>，这也是新手最容易混淆的部分。</p>
+
+<h3 id="id-架构设计文档-3.1静态解析引擎(ASTEngine)">3.1 静态解析引擎 (AST Engine)</h3>
+<ul>
+<li><strong>输入</strong>: <code>package.py</code> 源码。</li>
+<li><strong>工具</strong>: Python <code>ast</code> 模块。</li>
+<li><strong>目的</strong>: 提取依赖拓扑图 (Dependency Graph)。</li>
+<li><strong>特点</strong>: <strong>不执行代码</strong>，只分析语法树。因此忽略所有 <code>if</code> 条件。</li>
+<li><strong>产出</strong>: <code>req</code>, <code>ava</code>, <code>ban</code>, <code>xor</code> 等元数据，直接存入 Graph DB。</li>
+</ul>
+
+<h3 id="id-架构设计文档-3.2动态执行引擎(RuntimeEngine)">3.2 动态执行引擎 (Runtime Engine)</h3>
+<ul>
+<li><strong>输入</strong>: <code>package.py</code> 编译后的 Code Object。</li>
+<li><strong>工具</strong>: Python <code>exec()</code>。</li>
+<li><strong>目的</strong>: 构建运行时环境 (Environment Construction)。</li>
+<li><strong>特点</strong>: <strong>完整执行代码</strong>，拥有文件系统读写权限和环境变量修改权限。</li>
+<li><strong>产出</strong>: 最终的进程环境变量 (<code>PATH</code>, <code>PYTHONPATH</code> 等)。</li>
+</ul>
+
+<h2 id="id-架构设计文档-4.运行时生命周期(RuntimeLifecycle)">4. 运行时生命周期 (Runtime Lifecycle)</h2>
+<p>当用户执行 <code>wish python</code> 时，系统经历以下阶段：</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: java; gutter: false; theme: Confluence" data-theme="Confluence">
+sequenceDiagram
+    participant User
+    participant CLI as wish (CLI)
+    participant Req as Require
+    participant Sol as Solver
+    participant Sync as Syncer
+    participant Env as Environment
+    
+    User-&gt;&gt;CLI: wish python
+    CLI-&gt;&gt;Req: process_pkgs([&quot;python&quot;])
+    
+    rect rgb(200, 220, 240)
+    Note over Req,Sol: 解析阶段 (Resolution Phase)
+    Req-&gt;&gt;Req: combine_argv (Static Parse)
+    Req-&gt;&gt;Sol: collect_solution()
+    Sol-&gt;&gt;Sol: Progressive SAT Solving
+    Sol--&gt;&gt;Req: Solution {python: 3.10...}
+    end
+    
+    rect rgb(220, 240, 200)
+    Note over Req,Sync: 同步阶段 (Sync Phase)
+    Req-&gt;&gt;Sync: update_timestamp()
+    Req-&gt;&gt;Sync: sync_pkgs() (Check ETag/Download)
+    end
+    
+    rect rgb(240, 200, 200)
+    Note over Req,Env: 执行阶段 (Execution Phase)
+    Req-&gt;&gt;Req: exec_reqs() (Topology Order)
+    loop For each pkg in solution
+        Req-&gt;&gt;Req: exec_path(package.py)
+        Req-&gt;&gt;Env: env().insert/append()
+    end
+    end
+    
+    CLI-&gt;&gt;User: Launch Subprocess (bash/cmd)
+</pre>
+</div></div>
+
+<h2 id="id-架构设计文档-5.关键算法：SAT求解与权重">5. 关键算法：SAT 求解与权重</h2>
+<h3 id="id-架构设计文档-5.1SAT问题建模">5.1 SAT 问题建模</h3>
+<p>Wish 将依赖解析转化为布尔可满足性问题 (SAT)。每个 <code>(包名, 版本)</code> 对应一个布尔变量 $V_{pkg,ver}$。</p>
+<ul>
+<li><strong>硬约束 (Hard Constraints)</strong>: 必须满足的条件（如版本互斥、依赖关系、冲突关系）。</li>
+<li><strong>软约束 (Soft Constraints)</strong>: 优化的目标（如选择最新版本、选择层级最浅的版本）。</li>
+</ul>
+
+<h3 id="id-架构设计文档-5.2权重公式">5.2 权重公式</h3>
+<p>求解器使用 MaxSAT 算法寻找满足所有硬约束且权重和最大的解：</p>
+<p>$$ Weight = (100 - Pos) 	imes 10000 + (100 - Level) 	imes 100 + Rank $$</p>
+<ul>
+<li>$Pos$: 命令行参数中的顺序索引 (越靠前优先级越高)。</li>
+<li>$Level$: BFS 依赖层级 (越浅优先级越高)。</li>
+<li>$Rank$: 版本排序索引 (越新优先级越高)。</li>
+</ul>
+<p>此公式确保了系统优先满足用户直接指定的包，其次是直接依赖，并倾向于选择最新版本。</p>
+
+<h2 id="id-架构设计文档-6.数据流向(DataFlow)">6. 数据流向 (Data Flow)</h2>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: java; gutter: false; theme: Confluence" data-theme="Confluence">
+graph TD
+    CLI[CLI: wish] --&gt; Require[Require: 递归解析入口]
+    Require --&gt; Solver[Solver: 依赖解析与 SAT 求解]
+    Solver --&gt; Syncer[Syncer: 远程同步管理]
+    Syncer --&gt; API[REST API: 获取元数据/依赖关系]
+    Syncer --&gt; S3[S3/MinIO: 下载包文件/Artifacts]
+    API --&gt; Cache[Local Cache: SQLite &amp; 文件系统]
+    S3 --&gt; Cache
+    Cache --&gt; Execution[Execution: 构建环境变量并执行]
+</pre>
+</div></div>
+
+<h2 id="id-架构设计文档-7.扩展性设计">7. 扩展性设计</h2>
+<ul>
+<li><strong>元数据与负载分离</strong>: REST API 仅传输轻量元数据，S3 传输大文件，支持 CDN 加速。</li>
+<li><strong>多源高可用</strong>: <code>Syncer</code> 支持配置多个 API 和 S3 端点，自动故障转移。</li>
+<li><strong>插件式架构</strong>: 核心逻辑与具体的包实现解耦，包通过 <code>package.py</code> DSL 定义行为。</li>
+</ul>
+
+<h2 id="id-架构设计文档-8.深度解析：Syncer同步机制">8. 深度解析：Syncer 同步机制</h2>
+<p>Syncer 负责高效地将远程制品同步到本地，其核心逻辑实现了最小化传输和高可用。</p>
+<h3 id="id-架构设计文档-8.1最小化传输算法">8.1 最小化传输算法</h3>
+<ol>
+    <li><strong>解析优先</strong>: Syncer 只有在 SAT 求解器确定了唯一的解集 (Solution) 之后才会介入。</li>
+    <li><strong>差异比对</strong>: 它遍历解集中的每一个包版本，检查本地缓存路径 (<code>WISH_PACKAGE_PATH/pkg/ver</code>) 是否存在且完整。</li>
+    <li><strong>按需下载</strong>: 仅下载本地缺失的包。如果是增量更新（例如同一个版本的元数据变更），会对比 ETag。</li>
+</ol>
+<h3 id="id-架构设计文档-8.2高可用轮询(Client-SideHA)">8.2 高可用轮询 (Client-Side HA)</h3>
+<p>Syncer 内部维护了一个端点列表 (Endpoint List)。</p>
+<ul>
+    <li>初始列表: <code>[WISH_RESTAPI_URL, WISH_RESTAPI_URL1, ..., WISH_RESTAPI_URL10]</code></li>
+    <li><strong>Failover</strong>: 当发生网络超时或 5xx 错误时，自动切换到列表中的下一个节点重试。</li>
+    <li><strong>恢复</strong>: 在新的会话中，优先重置回主节点。</li>
+</ul>
+                    </div>
+
+                                        
+                                                      
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on 1月 25, 2026 18:29</p>
+                    <div id="footer-logo"><a href="https://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

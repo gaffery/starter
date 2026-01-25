@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>WISH : 产品主页</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">WISH</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                    <img src="images/icons/contenttypes/home_page_16.png" height="16" width="16" border="0" align="absmiddle" alt="Home Page" style="float: none; vertical-align: middle;"/>
+                                                <span id="title-text">
+                            WISH : 产品主页
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+    
+        
+    
+        
+        
+            Created by <span class='author'> root</span>, last modified on 1月 25, 2026
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <h1 style="text-align: center;" id="id-产品主页-Wish:DefineYourUniverse">Wish: Define Your Universe</h1>
+      <p style="text-align: center;font-size: 1.5em;margin-top: 20.0px;margin-bottom: 30.0px;">
+        <strong>&quot;一切皆包&quot;</strong> 的基础设施级环境管理系统
+      </p>
+      <p style="text-align: center;">
+        <img src="https://img.shields.io/badge/License-LGPL_v2.1-blue.svg"/>
+        <img src="https://img.shields.io/badge/Platform-Win%20%7C%20Lin%20%7C%20Mac-lightgrey"/>
+        <img src="https://img.shields.io/badge/Solver-SAT_Powered-orange"/>
+      </p>
+    </div>
+</div>
+</div>
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <h2 id="id-产品主页-😫传统痛点">😫 传统痛点</h2>
+      <ul>
+        <li><strong>环境污染</strong>: <code>pip install</code> 破坏了系统 python，导致 yum/apt 崩溃。</li>
+        <li><strong>版本冲突</strong>: 项目 A 需要 <code>protobuf==3.19</code>，项目 B 需要 <code>3.20</code>，无法共存。</li>
+        <li><strong>配置漂移</strong>: &quot;在我机器上能跑&quot;，部署到服务器就挂。</li>
+      </ul>
+    </div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <h2 id="id-产品主页-✨Wish方案">✨ Wish 方案</h2>
+      <ul>
+        <li><strong>原生隔离</strong>: <code>wish</code> 动态构建内存环境变量，<strong>零污染</strong>宿主机。</li>
+        <li><strong>原子化共存</strong>: 多版本库物理隔离，按需组合，互不干扰。</li>
+        <li><strong>100% 复现</strong>: 基于 SAT 求解器的确定性解析，确保全链路环境一致。</li>
+      </ul>
+    </div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <h2 id="id-产品主页-⚡实战演示：从脚本到管线">⚡ 实战演示：从脚本到管线</h2>
+    </div>
+</div>
+</div>
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <h3 id="id-产品主页-🐍标准开发场景">🐍 标准开发场景</h3>
+      <p>无需 `conda create`，无需 `source activate`。一条命令，即用即焚。</p>
+      <div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: bash; gutter: false; theme: RDark" data-theme="RDark"># 场景 1: 数据科学环境秒级构建
+# 需求: Python 3.9 + Pandas + Matplotlib
+$ wish python=3.9 pandas matplotlib - python
+
+[Solver] Resolving dependencies...
+[Solver] Solution found:
+  - python: 3.9.13.lin.0
+  - pandas: 1.4.3.lin.0
+  - matplotlib: 3.5.2.lin.0
+  - numpy: 1.21.5 (自动推导)
+
+[Syncer] Downloading pandas-1.4.3... (10MB) [OK]
+
+Python 3.9.13 (main, Aug 25 2022) 
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot;.
+&gt;&gt;&gt; import pandas as pd
+&gt;&gt;&gt; print(&quot;Environment Ready!&quot;)
+Environment Ready!
+</pre>
+</div></div>
+    </div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <h3 id="id-产品主页-🏢企业级生产场景">🏢 企业级生产场景</h3>
+      <p>统一管理 DCC 软件、微服务和复杂的插件依赖树。</p>
+      <div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="syntaxhighlighter-pre" data-syntaxhighlighter-params="brush: bash; gutter: false; theme: RDark" data-theme="RDark"># 场景 2: 多项目无缝切换 (VFX)
+# 此时此刻：进入《流浪地球》环境
+$ wish project=wandering-earth - maya
+Loading Maya 2022... [OK]
+
+# 下一秒：切换到《三体》环境
+$ wish project=three-body - maya
+Loading Maya 2024... [OK]
+
+# 场景 3: 复杂服务编排 (DevOps)
+# 自动拉起 Confluence 及其依赖的 Java 17 和 Postgres 驱动
+$ wish confluence=7.19 postgres-driver - start.sh
+[Solver] Resolved: confluence-7.19 + java-17 + pg-42.3
+
+# 场景 4: 插件自动注入 (Pipeline)
+# 启动 Nuke，Wish 自动检测并注入 AYON 流程工具
+$ wish nuke=13.2 ayon-init - Nuke13.2
+[Trigger] Detected &#39;nuke&#39;, injecting &#39;ayon-init-nuke&#39;...
+</pre>
+</div></div>
+    </div>
+</div>
+</div>
+<div class="columnLayout three-equal" data-layout="three-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <h3 style="text-align: center;" id="id-产品主页-🧠确定性大脑">🧠 确定性大脑</h3>
+      <p style="text-align: center;">内置 <strong>SAT 求解器</strong></p>
+      <p>在数千个包版本中计算全局最优解，拒绝贪心算法导致的局部最优。</p>
+    </div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <h3 style="text-align: center;" id="id-产品主页-⚡原生高性能">⚡ 原生高性能</h3>
+      <p style="text-align: center;"><strong>非容器化</strong> 虚拟化</p>
+      <p>直接利用宿主机内核与 GPU 驱动，零损耗运行重型图形应用。</p>
+    </div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <h3 style="text-align: center;" id="id-产品主页-🌐混合云分发">🌐 混合云分发</h3>
+      <p style="text-align: center;"><strong>元数据分离</strong> 架构</p>
+      <p>API 处理元数据，S3/CDN 分发大文件，支持全球多地协同。</p>
+    </div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <h2 id="id-产品主页-📚文档中心">📚 文档中心</h2>
+    </div>
+</div>
+</div>
+<div class="columnLayout three-equal" data-layout="three-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <div style="background-color: rgb(244,245,247);padding: 15.0px;border-radius: 5.0px;">
+        <h3 style="margin-top: 0;" id="id-产品主页-🚀快速入门">🚀 快速入门</h3>
+        <ul style="list-style-type: none;padding-left: 0;">
+          <li><a href="http://conf.wish.net/pages/viewpage.action?pageId=6488065" rel="nofollow">⚡ 快速上手指南</a></li>
+          <li><a href="http://conf.wish.net/pages/viewpage.action?pageId=6488068" rel="nofollow">🌍 部署与运维指南</a></li>
+          <li><a href="http://conf.wish.net/pages/viewpage.action?pageId=7110675" rel="nofollow">🔄 从 Rez/Conda 迁移</a></li>
+        </ul>
+      </div>
+    </div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <div style="background-color: rgb(244,245,247);padding: 15.0px;border-radius: 5.0px;">
+        <h3 style="margin-top: 0;" id="id-产品主页-🛠️进阶开发">🛠️ 进阶开发</h3>
+        <ul style="list-style-type: none;padding-left: 0;">
+          <li><a href="http://conf.wish.net/pages/viewpage.action?pageId=6488077" rel="nofollow">📘 包定义 (Package.py)</a></li>
+          <li><a href="http://conf.wish.net/pages/viewpage.action?pageId=6488078" rel="nofollow">🛡️ 最佳实践与模式</a></li>
+          <li><a href="http://conf.wish.net/pages/viewpage.action?pageId=6815972" rel="nofollow">🔧 故障排查与诊断</a></li>
+        </ul>
+      </div>
+    </div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+
+      <div style="background-color: rgb(244,245,247);padding: 15.0px;border-radius: 5.0px;">
+        <h3 style="margin-top: 0;" id="id-产品主页-🧠核心原理">🧠 核心原理</h3>
+        <ul style="list-style-type: none;padding-left: 0;">
+          <li><a href="http://conf.wish.net/pages/viewpage.action?pageId=4522007" rel="nofollow">💡 架构白皮书</a></li>
+          <li><a href="http://conf.wish.net/pages/viewpage.action?pageId=6815971" rel="nofollow">🧪 依赖解析原理</a></li>
+          <li><a href="http://conf.wish.net/pages/viewpage.action?pageId=6488066" rel="nofollow">⚙️ API 参考手册</a></li>
+        </ul>
+      </div>
+    </div>
+</div>
+</div>
+</div>
+                    </div>
+
+                                        
+                                                      
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on 1月 25, 2026 18:29</p>
+                    <div id="footer-logo"><a href="https://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>
