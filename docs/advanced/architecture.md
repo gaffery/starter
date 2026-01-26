@@ -68,6 +68,11 @@ Wish 客户端会匿名收集使用数据（如启动频率、解析时长、错
 *   **版本分布**: 决定何时停止支持某个旧版本的软件。
 *   **错误聚类**: 快速发现大规模爆发的依赖冲突问题。
 
+#### 遥测数据流 (Telemetry Data Flow)
+1.  **采集**: 客户端在 `exec_reqs` 完成后异步上报 JSON 载荷。
+2.  **聚合**: Telemetry Hub 接收数据并存入时间序列数据库 (InfluxDB)。
+3.  **分析**: 治理引擎定期运行分析脚本，更新图数据库中的 `USED` 关系权重。
+
 ## 5. 技术架构
 
 Wish 位于操作系统之上，应用软件之下，是生产环境的**基石层**。
@@ -76,7 +81,7 @@ Wish 位于操作系统之上，应用软件之下，是生产环境的**基石�
 
 ### 5.1 核心组件
 
-*   **Wish Engine**: CLI 和核心驱动，负责依赖解析（SAT 求解器）。
+*   **Wish Engine**: CLI 和核心驱动，负责依赖解析（SAT 求解器 (Solver)）。
 *   **Graph Database**: 存储依赖关系图谱。
 *   **Launcher**: 用户图形界面。
 *   **Agent**: 智能交互层。
@@ -89,7 +94,7 @@ Wish 采用"元数据中心化，内容联邦化"的设计。
 *   **元数据 (Graph Database)**: 统一存储在图数据库 (Neo4j) 中。
     *   **节点 (Node)**: 代表包 (Package)、版本 (Version)、平台 (Platform) 等实体。
     *   **关系 (Relationship)**: 代表依赖 (DEPENDS_ON)、冲突 (CONFLICTS_WITH)、提供 (PROVIDES) 等逻辑关系。
-*   **制品 (Artifacts)**: 可分布在不同的私有 S3 存储桶中，支持跨团队协作与权限隔离。每个团队可以拥有自己的 Bucket，仅需共享元数据即可实现生态互通。
+*   **制品 (Artifact) (制品 (Artifact) (制品 (Artifact) (制品 (Artifact) (制品 (Artifacts)))))**: 可分布在不同的私有 S3 存储桶中，支持跨团队协作与权限隔离。每个团队可以拥有自己的 Bucket，仅需共享元数据即可实现生态互通。
 
 #### 图数据库模型 (Graph Schema)
 
@@ -131,8 +136,34 @@ classDiagram
 Wish 遵循零信任 (Zero Trust) 安全原则：
 
 *   **API 认证**: 所有客户端请求必须携带 HMAC-SHA256 签名的 Token。
-*   **制品完整性**: 客户端在下载后自动校验 SHA-256 哈希值，防止中间人篡改。
+*   **制品 (Artifact)完整性**: 客户端在下载后自动校验 SHA-256 哈希值，防止中间人篡改。
 *   **最小权限**: 客户端进程以普通用户权限运行，严禁请求 Root/Admin 权限。
+
+### 6.1 零信任与 HMAC 签名 (Zero Trust & HMAC)
+为了防止 API 被恶意调用，Wish 实现了基于 HMAC 的请求签名机制：
+1.  客户端使用 `WISH_ACCESS_KEY` 和 `WISH_SECRET_KEY` 对请求参数和时间戳进行签名。
+2.  服务端验证签名有效性及时间戳（防止重放攻击）。
+3.  所有敏感操作（如发布新包）均需通过此认证。
+
+#### HMAC 认证握手流程 (HMAC Authentication Handshake)
+
+```mermaid
+sequenceDiagram
+    participant Client as Wish CLI
+    participant Server as Wish API
+    
+    Note over Client: 1. Generate Signature<br/>(HMAC-SHA256 with Secret Key)
+    Client->>Server: 2. Send Request + HMAC Header<br/>(Signature, Access Key, Timestamp)
+    
+    Note over Server: 3. Verify Signature<br/>(Recompute HMAC & Compare)
+    
+    alt Signature Valid
+        Note over Server: 4. Check Timestamp<br/>(Prevent Replay Attack)
+        Server-->>Client: 5. Return Session Token / Success
+    else Signature Invalid
+        Server-->>Client: 401 Unauthorized
+    end
+```
 
 ## 7. 自举 (Self-Hosting)
 
@@ -148,9 +179,9 @@ wish wish=1.0.0-beta - wish ...
 
 | 术语 | 英文 | 解释 |
 | :--- | :--- | :--- |
-| **制品** | Artifact | 软件包的二进制文件或压缩包，通常存储在 S3 中。 |
+| **制品 (Artifact)** | 制品 (Artifact) | 软件包的二进制文件或压缩包，通常存储在 S3 中。 |
 | **元数据** | Metadata | 描述包属性（依赖、版本、平台）的数据，存储在图数据库中。 |
-| **求解器** | Solver | 基于 SAT 算法的依赖解析核心组件。 |
-| **联邦存储** | Federated Storage | 元数据集中管理，制品分散存储的架构模式。 |
+| **求解器 (Solver)** | 求解器 (Solver) | 基于 SAT 算法的依赖解析核心组件。 |
+| **联邦存储** | Federated Storage | 元数据集中管理，制品 (Artifact)分散存储的架构模式。 |
 | **自举** | Self-Hosting | 使用工具的旧版本来构建或运行其新版本的能力。 |
 | **下游影响** | Downstream Impact | 一个基础库的变更对其所有依赖者造成的潜在风险。 |

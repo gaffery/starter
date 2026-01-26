@@ -1,6 +1,6 @@
 # 部署与运维指南
 
-本文档介绍 Wishtools 的部署配置、高可用设置、离线模式使用以及服务端搭建建议。
+本文档介绍 Wish Platform 的部署配置、高可用设置、离线模式使用以及服务端搭建建议。
 
 ## 1. 客户端配置
 
@@ -29,7 +29,7 @@ export WISH_STORAGE_URL="http://s3.company.internal/bucket?access=KEY&secret=SEC
 
 ### 1.3 高可用配置 (High Availability)
 
-Wishtools 客户端支持自动故障转移。你可以在环境变量中配置多个备用节点（后缀 1-10）。
+Wish Platform 客户端支持自动故障转移。你可以在环境变量中配置多个备用节点（后缀 1-10）。
 
 ```bash
 # 备用 API 节点 (当主节点不可达时尝试)
@@ -122,21 +122,96 @@ API 服务主要处理元数据查询，属于**计算密集型 + 读多写少**
 
 利用 WISH 的多源回退机制，让不同地区的客户端优先连接本地节点。例如洛杉矶办公室配置本地 S3 镜像为 `WISH_STORAGE_URL`，上海主节点为 `WISH_STORAGE_URL1`。
 
-## 5. 离线模式部署
+## 5. Kubernetes 部署 (Helm)
 
-在无法连接外网或内网服务器的隔离环境中使用 Wishtools。
+对于追求高可用与弹性伸缩的企业级环境，推荐使用 Kubernetes 进行容器化编排。通过 Helm Chart 可以快速交付包含 API、图数据库及缓存层的完整栈。
+
+### 5.1 核心组件配置 (values.yaml)
+
+以下是一个典型的企业级 `values.yaml` 配置片段，集成了 Wish API、Neo4j 集群以及用于加速元数据查询的 Redis。
+
+```yaml
+# Wish Platform Enterprise Helm Configuration
+global:
+  storageClass: "premium-rwo"
+
+wish-api:
+  replicaCount: 3
+  image:
+    repository: harbor.company.internal/wish/api
+    tag: "v2.4.0"
+  env:
+    - name: REDIS_HOST
+      value: "wish-redis-master"
+    - name: NEO4J_URI
+      value: "bolt+routing://wish-neo4j:7687"
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+
+neo4j:
+  core:
+    numberOfCoreServers: 3
+  readReplica:
+    numberOfReadReplicas: 2
+  persistence:
+    size: 100Gi
+
+redis:
+  architecture: "replication"
+  auth:
+    enabled: true
+    existingSecret: "wish-redis-secret"
+```
+
+### 5.2 Sidecar 模式：制品缓存 (Artifact Caching)
+
+在 Kubernetes 环境中，为了减少 Pod 启动时从 S3 下载海量包文件的带宽压力，推荐采用 **Sidecar 模式** 实现节点级或 Pod 级的制品缓存。
+
+*   **工作原理**: 在业务 Pod 中注入一个轻量级的缓存代理容器（如 Nginx 或自定义 Cache Agent）。
+*   **优势**:
+    *   **带宽节省**: 多个容器共享同一份缓存，避免重复下载。
+    *   **启动加速**: 预热常用依赖包，显著提升 Pod 扩容速度。
+    *   **解耦**: 业务容器无需关心缓存逻辑，只需访问 `localhost:8080` 即可获取包。
+
+```yaml
+# Pod 定义示例
+spec:
+  containers:
+  - name: business-app
+    image: my-app:latest
+    env:
+    - name: WISH_STORAGE_URL
+      value: "http://localhost:8080/cache" # 指向 Sidecar
+  - name: wish-cache-sidecar
+    image: wish/cache-proxy:latest
+    volumeMounts:
+    - name: cache-volume
+      mountPath: /data/cache
+  volumes:
+  - name: cache-volume
+    emptyDir: {}
+```
+
+## 6. 离线模式部署
+
+在无法连接外网或内网服务器的隔离环境中使用 Wish Platform。
 
 1.  **准备离线包**: 在有网环境下载包并打包 `packages` 目录。
 2.  **配置**: 设置 `export WISH_OFFLINE_MODE=1`。
 
 启用离线模式后，Wish 将不再尝试连接 API，仅使用本地 `WISH_PACKAGE_PATH` 中的包。
 
-## 6. 安全加固
+## 7. 安全加固
 
 *   **API 安全**: 建议在 Nginx/Kong 网关层做 Basic Auth 或 IP 白名单。
 *   **S3 安全**: 配置 IAM Policy，允许 `GetObject` 但禁止 `PutObject`（仅 CI/CD 账号有写权限）。
 
-## 7. 部署前检查清单 (Pre-flight Checklist)
+## 8. 部署前检查清单 (Pre-flight Checklist)
 
 在正式上线前，请确认以下事项：
 
@@ -146,7 +221,7 @@ API 服务主要处理元数据查询，属于**计算密集型 + 读多写少**
 - [ ] **索引构建**: 确认 Neo4j 中的索引已建立 (使用 `:schema` 命令查看)。
 - [ ] **客户端版本**: 确认所有客户端使用的是统一的 Wish 脚本版本。
 
-## 8. 灾难恢复 (Disaster Recovery)
+## 9. 灾难恢复 (Disaster Recovery)
 
 为防止意外数据丢失，应制定完善的 DR 计划：
 
@@ -154,7 +229,7 @@ API 服务主要处理元数据查询，属于**计算密集型 + 读多写少**
 *   **包文件一致性**: 启用 S3 的 Versioning 功能，防止误删或覆盖。
 *   **恢复演练**: 每季度进行一次从零恢复演练，验证备份文件的可用性。
 
-## 9. 监控与告警 (Monitoring & Observability)
+## 10. 监控与告警 (Monitoring & Observability)
 
 为了确保企业级稳定性，建议接入监控系统：
 

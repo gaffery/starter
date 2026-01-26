@@ -159,7 +159,7 @@ else:
 
 ### 4.2 存储成本优化
 *   **去重**: 对于大文件（如纹理库），建议将其打包为独立的 `asset-pack`，被多个软件版本共同依赖，而不是打进每个软件的 zip 包中。
-*   **生命周期管理**: 在 S3 上配置 Lifecycle Rule，将超过 90 天未访问的 Artifacts 转入 Cold Storage (Glacier)。
+*   **生命周期管理**: 在 S3 上配置 Lifecycle Rule，将超过 90 天未访问的 制品 (Artifact) (制品 (Artifact) (制品 (Artifact) (制品 (Artifacts)))) 转入 Cold Storage (Glacier)。
 
 ## 5. 仓库管理模式 (Repository Management)
 
@@ -213,7 +213,7 @@ if sys.platform == "win32":
 **原则**: 绝对不要手动修改 `packages/` 目录下的已安装文件。Wish 假设包是不可变的。如果需要调试，请使用 `WISH_DEVELOP_MODE=1`。
 
 ### 9.2 搜索空间优化
-显式指定大版本 (如 `wish python=3`) 能显著减少 SAT 求解器的变量规模，提升解析速度。
+显式指定大版本 (如 `wish python=3`) 能显著减少 SAT 求解器 (Solver)的变量规模，提升解析速度。
 
 ### 9.3 缓存预热
 在 CI/CD 流水线初始化阶段，可以预先运行一次全量同步命令 (`wish common-lib tools +`) 来消除运行时的下载等待。

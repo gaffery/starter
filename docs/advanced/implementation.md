@@ -1,14 +1,14 @@
 # 架构设计文档
 
-本文档深入解析 Wishtools 的内部架构、设计理念和关键算法。
+本文档深入解析 Wish Platform 的内部架构、设计理念和关键算法。
 
 ## 1. 设计理念
 
-Wishtools 的设计不仅是为了解决依赖管理，更是为了构建一个**制品血缘追踪系统 (Artifact Lineage System)**。其核心设计原则包括：
+Wish Platform 的设计不仅是为了解决依赖管理，更是为了构建一个**制品 (Artifact)血缘追踪系统 (制品 (Artifact) Lineage System)**。其核心设计原则包括：
 
 *   **一切皆包 (Everything is a Package)**: 工具、库、配置、甚至 Wish 自身都是统一管理的节点。
 *   **声明与执行分离 (Separation of Declaration and Execution)**: 静态 AST 解析用于构建依赖图，动态 Python 运行时用于构建环境。
-*   **确定性解析 (Deterministic Resolution)**: 使用 SAT 求解器替代传统的贪心算法，确保全局最优解。
+*   **确定性解析 (Deterministic Resolution)**: 使用 SAT 求解器 (Solver)替代传统的贪心算法，确保全局最优解。
 *   **环境非侵入 (Non-Intrusive)**: 仅修改内存中的环境变量，绝不污染宿主机系统文件。
 
 ## 2. 系统分层架构
@@ -26,7 +26,7 @@ Wish 采用典型的分层架构设计，各层职责清晰，通过标准接口
 |                   核心逻辑层 (Core Logic Layer)               |
 |                                                               |
 |   [ 依赖解析器 Resolver ] <-----> [ 执行引擎 Executor ]       |
-|         | (SAT Solver)                  | (Python Runtime)    |
+|         | (SAT 求解器 (Solver))                  | (Python Runtime)    |
 |         v                               v                     |
 |   [ 静态分析器 Parser ]           [ 环境管理器 Context ]      |
 |     (AST Extraction)                (Environ / Thispath)      |
@@ -49,7 +49,7 @@ Wish 采用典型的分层架构设计，各层职责清晰，通过标准接口
 |   [ 图数据库 Graph DB ] <-----> [ 元数据 API Metadata ]       |
 |         (Relationships)                 (REST)                |
 |                                                               |
-|   [ 制品存储 Artifact Store ]                                 |
+|   [ 制品 (Artifact)存储 制品 (Artifact) Store ]                                 |
 |         (S3 / MinIO)                                          |
 +---------------------------------------------------------------+
 ```
@@ -63,10 +63,10 @@ Wish 采用典型的分层架构设计，各层职责清晰，通过标准接口
     *   **Parser**: 使用 AST 提取静态依赖元数据。
 *   **数据访问层**: 负责数据的获取与持久化。
     *   **Syncer**: 智能同步组件，负责从远程拉取元数据和文件，支持断点续传和 ETag 校验。
-    *   **Cache**: 本地 SQLite 数据库加速查询，文件系统缓存 Artifacts。
+    *   **Cache**: 本地 SQLite 数据库加速查询，文件系统缓存 制品 (Artifact) (制品 (Artifact) (制品 (Artifact) (制品 (Artifacts))))。
 *   **基础设施层**: 服务端组件。
     *   **Graph DB**: 存储复杂的包依赖与血缘关系。
-    *   **Artifact Store**: 存储实际的二进制包文件。
+    *   **制品 (Artifact) Store**: 存储实际的二进制包文件。
 
 ## 3. 核心引擎：双模解析机制
 
@@ -95,7 +95,7 @@ sequenceDiagram
     participant User
     participant CLI as wish (CLI)
     participant Req as Require
-    participant Sol as Solver
+    participant Sol as 求解器 (Solver)
     participant Sync as Syncer
     participant Env as Environment
     
@@ -136,7 +136,7 @@ Wish 将依赖解析转化为布尔可满足性问题 (SAT)。每个 `(包名, �
 *   **软约束 (Soft Constraints)**: 优化的目标（如选择最新版本、选择层级最浅的版本）。
 
 ### 5.2 权重公式
-求解器使用 MaxSAT 算法寻找满足所有硬约束且权重和最大的解：
+求解器 (Solver)使用 MaxSAT 算法寻找满足所有硬约束且权重和最大的解：
 
 $$ Weight = (100 - Pos) \times 10000 + (100 - Level) \times 100 + Rank $$
 
@@ -151,10 +151,10 @@ $$ Weight = (100 - Pos) \times 10000 + (100 - Level) \times 100 + Rank $$
 ```mermaid
 graph TD
     CLI[CLI: wish] --> Require[Require: 递归解析入口]
-    Require --> Solver[Solver: 依赖解析与 SAT 求解]
-    Solver --> Syncer[Syncer: 远程同步管理]
+    Require --> 求解器 (Solver)[求解器 (Solver): 依赖解析与 SAT 求解]
+    求解器 (Solver) --> Syncer[Syncer: 远程同步管理]
     Syncer --> API[REST API: 获取元数据/依赖关系]
-    Syncer --> S3[S3/MinIO: 下载包文件/Artifacts]
+    Syncer --> S3[S3/MinIO: 下载包文件/制品 (Artifact) (制品 (Artifact) (制品 (Artifact) (制品 (Artifacts))))]
     API --> Cache[Local Cache: SQLite & 文件系统]
     S3 --> Cache
     Cache --> Execution[Execution: 构建环境变量并执行]
@@ -169,7 +169,7 @@ graph TD
 ## 8. 深度解析：Syncer 同步机制
 
 ### 8.1 最小化传输算法
-1.  **解析优先**: Syncer 只有在 SAT 求解器确定了唯一的解集 (Solution) 之后才会介入。
+1.  **解析优先**: Syncer 只有在 SAT 求解器 (Solver)确定了唯一的解集 (Solution) 之后才会介入。
 2.  **差异比对**: 它遍历解集中的每一个包版本，检查本地缓存路径 (`WISH_PACKAGE_PATH/pkg/ver`) 是否存在且完整。
 3.  **按需下载**: 仅下载本地缺失的包。如果是增量更新（例如同一个版本的元数据变更），会对比 ETag。
 

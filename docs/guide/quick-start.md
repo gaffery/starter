@@ -1,6 +1,6 @@
 # 快速上手指南
 
-本文档将带你从零开始，在 5 分钟内体验 WISH 的强大能力。
+本文档将带你从零开始，在 5 分钟内体验 Wish Platform 的强大能力。
 
 > **核心理念：** Wish 不是传统包管理器。它是一个**环境激活系统**——你告诉它需要什么包，它就为你的命令构建一个完美的执行环境。
 
@@ -85,7 +85,7 @@ $ wish python=3.10 pytorch=2.0 - python train.py
 $ wish python numpy pandas matplotlib - jupyter notebook
 ```
 
-### 3.1 进入交互式 Shell
+### 3.1 进入交互式 Shell (Interactive Shell)
 
 如果你需要在环境中做多次操作，**必须显式指定 shell 命令**（如 `bash`, `zsh` 或 `sh`）：
 
@@ -114,21 +114,21 @@ $ exit  # 退出子 shell 回到原环境
 # 请求 requests (依赖 urllib3<1.27) 和最新版 urllib3 (2.0+)
 $ wish requests urllib3=2.0 - python -c "import requests"
 
-[Solver] Resolving...
-[Solver] Error: Conflict detected!
+[求解器 (Solver)] Resolving...
+[求解器 (Solver)] Error: Conflict detected!
   - requests requires urllib3<1.27
   - User requested urllib3=2.0
   -> UNSATISFIABLE.
 ```
 
-WISH 的 SAT 求解器会明确告诉你这**不可行**，而不是像 pip 那样可能默默安装不兼容的版本导致运行时报错。
+WISH 的 SAT 求解器 (Solver) 会明确告诉你这**不可行**，而不是像 pip 那样可能默默安装不兼容的版本导致运行时报错。
 
-**正确的做法**：让 Solver 自动计算。
+**正确的做法**：让 求解器 (Solver) 自动计算。
 
 ```bash
 $ wish requests - python -c "import requests; print(requests.__version__)"
 
-[Solver] Solution:
+[求解器 (Solver)] Solution:
   - requests: 2.28.1
   - urllib3: 1.26.9 (自动降级以满足依赖)
 2.28.1

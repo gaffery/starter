@@ -39,7 +39,7 @@
 ### 2.2 链接与资源
 *   **相对路径**: 严禁使用绝对路径或 URL 链接仓库内文件。
     *   ✅ 正确: `[快速上手](../guide/quick-start.md)`
-    *   ❌ 错误: `[快速上手](/docs/guide/quick-start.md)`
+    *   ❌ 错误: `[快速上手](/docs/guide/quick-start.md)` (绝对路径在 GitLab 中无效)
 *   **图片**: 所有图片存放在 `docs/images/`。
     *   引用格式: `![Alt Text](../images/filename.png)`
 

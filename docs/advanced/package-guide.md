@@ -150,6 +150,17 @@ ext("mtoa-maya-plugin@maya>=2022")
     env("PYTHONPATH").unload("C:\\Python")
     ```
 
+### 4.3 高级环境操作 (Advanced Env Operations)
+在复杂的管线中，有时需要更精细地控制变量的合并行为：
+
+*   **`prepend(path)`**: 显式地将路径置于变量的最前端。这在需要覆盖所有已存在路径（包括其他包设置的路径）时非常有用。
+*   **`unload(prefix)`**: **非常强大**。用于清理从父进程（如系统终端）继承来的污染。支持基于模式的卸载，确保运行时环境的纯净性，防止“环境中毒”。
+    ```python
+    # 清理所有指向旧 Python 环境的路径
+    env("PYTHONPATH").unload("/usr/lib/python")
+    env("PYTHONPATH").unload("C:\\Python")
+    ```
+
 ---
 
 ## 5. 可重现性与版本锁定 (Reproducibility & Locking)
@@ -164,7 +175,7 @@ Wish 鼓励使用精确的版本控制来实现环境的可重现性。
 
 ## 6. 测试你的包 (Testing Your Package)
 
-在发布包之前，建议进行本地测试：
+在发布包之前，建议进行本地测试。为了保证测试的准确性，应当在**隔离环境 (Isolated Env)** 中进行：
 
 1.  **语法检查**: 运行 `wish -c "import packages.mypkg.package"` (假设在 correct path 下) 或者简单地 `wish +` 看是否有解析错误。
 2.  **环境验证**:
@@ -173,7 +184,12 @@ Wish 鼓励使用精确的版本控制来实现环境的可重现性。
     export WISH_DEVELOP_MODE=1
     wish mypkg - printenv | grep MY_VAR
     ```
-3.  **加载测试**: 确保 `import mypkg` 在 Python 环境中工作正常。
+3.  **隔离环境测试 (Isolating Env)**:
+    使用 `--pure` 或 `--clean` 参数启动 Wish，强制忽略所有继承自宿主系统的环境变量（除了必要的系统变量），确保包在纯净环境下依然能正常工作。
+    ```bash
+    wish --pure mypkg - python -c "import mypkg; print('Success')"
+    ```
+4.  **加载测试**: 确保 `import mypkg` 在 Python 环境中工作正常。
 
 ---
 
@@ -194,11 +210,86 @@ Wish 鼓励使用精确的版本控制来实现环境的可重现性。
 
 ---
 
-## 8. Gitflow 发布工作流
+## 8. Metaprogramming in package.py (Expert-Level)
 
-在企业环境中，建议使用 `wish gitflow` 命令行工具来管理包的发布，它自动化了以下步骤：
+虽然 Wish 鼓励声明式的依赖定义，但在处理大规模插件系统或动态环境时，利用 Python 的元编程能力可以极大地减少冗余。
 
-1.  **LFS 处理**: 自动扫描 `src/` 目录，将大于 50MB 的二进制文件提取并上传到 S3/MinIO，避免 Git 仓库膨胀。
+### 8.1 动态依赖生成 (Dynamic Dependency Generation)
+
+**场景**: 你的包（如 `maya-render-config`）需要根据支持的渲染器列表动态请求插件包。
+
+**实现**:
+利用 Python 循环在解析阶段动态调用 `req()` 或 `ext()`。
+
+```python
+# package.py
+PLUGINS = ["vray", "arnold", "redshift"]
+
+for plugin in PLUGINS:
+    # 动态生成依赖：请求每个渲染器的特定版本
+    req(f"{plugin}-maya-plugin>=1.0")
+    
+    # 或者动态声明扩展
+    # ext(f"config-{plugin}@maya")
+```
+
+**优势**: 易于维护。增加新插件只需更新 `PLUGINS` 列表，无需手动复制多行 `req`。
+
+### 8.2 解析时环境检查 (Parse-time Environment Inspection)
+
+**场景**: 根据宿主机的环境变量（如 `SITE_ID`）决定加载哪些基础库。
+
+**实现**:
+在 `package.py` 顶层直接访问 `os.environ`。
+
+```python
+import os
+
+# 警告：这发生在解析阶段 (Declaration Phase)
+site = os.environ.get("SITE_ID", "default")
+
+if site == "vancouver":
+    req("vc-pipeline-tools")
+elif site == "london":
+    req("ldn-pipeline-tools")
+```
+
+#### ⚠️ 重要警告：风险 vs 收益
+
+*   **风险 (The Risk)**: 
+    *   **破坏缓存一致性**: Wish 可能会缓存解析结果。如果 `SITE_ID` 改变但缓存未刷新，环境将处于错误状态。
+    *   **不可预测性**: 不同的机器或 Shell 会话可能因为环境变量不同而解析出完全不同的依赖图，导致“在我机器上能跑”的问题。
+*   **收益 (The Benefit)**: 
+    *   **极致的灵活性**: 允许同一个包在不同物理站点或部门之间自动适配，无需创建多个版本。
+*   **最佳实践**: 仅在环境变量**极少变动**（如物理站点 ID、操作系统架构）且无法通过 `ava()` 表达时使用此模式。
+
+---
+
+## 9. Python 模块化工具模式 (The Python Module Pattern)
+
+**场景**：开发一个既可以用作命令行工具 (CLI)，又可以被其他 Python 脚本导入作为库使用的包。
+
+**Package.py 配置**:
+```python
+# package: confflow/package.py
+import os
+
+req("python>=3.6")
+
+# 1. 暴露源码目录到 PYTHONPATH
+env("PYTHONPATH").insert(os.path.join(this.root, "src"))
+
+# 2. 定义别名调用模块
+alias("confflow", "python3 -m confflow")
+```
+
+---
+
+## 10. Gitflow 发布工作流 (Gitflow Workflow)
+
+在企业级环境中，我们推荐使用 `wish gitflow` 命令行工具来管理包的发布，它自动化了以下步骤：
+
+1.  **LFS 处理 (LFS Handling)**: 自动扫描 `src/` 目录，将大于 50MB 的二进制文件提取并上传到 S3/MinIO，避免 Git 仓库膨胀。Wish 会在 Git 仓库中仅保留 LFS 指针，而在发布时自动还原制品 (Artifact)。
 2.  **版本打标**: 基于 `package.py` 路径自动生成 Git Tag。
 3.  **CI 触发**: 推送代码后，GitLab CI/CD 会自动拉取代码，从 S3 下载 LFS 文件，组合后发布到 Wish 仓库。
 

@@ -10,7 +10,17 @@ Wish 使用一种基于 Python 的领域特定语言 (DSL) 来定义包的元数
 
 **⚠️ 警告**: 这些关键字的参数必须是静态字符串。不要将它们放在 `if/for/try` 块中，否则会导致解析器行为不符合预期（AST 解析会忽略流程控制）。
 
+### 1.0 深度剖析：为什么不能使用 If？ (Deep Dive: Why No Ifs?)
+
+Wish 的声明阶段依赖于对 `package.py` 的 **AST (抽象语法树) 静态解析**，而不是直接运行 Python 解释器。
+
+*   **解析原理**: Wish 内部的解析器会遍历代码树，寻找特定的函数调用（如 `req`, `ava`）。
+*   **性能考量**: 静态解析允许 Wish 在不执行任何潜在危险代码的情况下，快速构建数万个包的依赖图。
+*   **逻辑隔离**: 如果允许 `if` 语句，解析器将不得不模拟 Python 的运行时状态（如环境变量、系统平台），这会使依赖解析变得不可预测且极其缓慢。
+*   **求解器 (Solver) 友好**: 声明式语法可以直接转化为 SAT 求解器 (Solver) 的布尔约束，而命令式逻辑（If/Else）在数学上难以直接映射到高效的全局最优解搜索中。
+
 | 关键字 | 全称 | 逻辑 | 行为描述 | 典型示例 |
+
 | :--- | :--- | :--- | :--- | :--- |
 | **`req`** | Require | `AND` | **必需依赖**。当前包工作所必须的其他包。支持版本约束。 | `req("python>=3.9", "numpy")` |
 | **`ava`** | Available | `OR` | **可用性条件**。只有当所有条件都满足时，当前包才会被纳入计算。常用于区分平台。 | `ava("platform=linux", "arch=x86_64")` |
@@ -31,7 +41,7 @@ Wish 使用一种基于 Python 的领域特定语言 (DSL) 来定义包的元数
 
 ### 1.2 高级逻辑场景 (Advanced Logic)
 
-#### 1.2.1 互斥与条件的组合 (XOR + AVA)
+#### 1.2.1 互斥与条件的组合 (Advanced Logic: XOR + AVA)
 当你需要根据平台自动选择互斥项时，这是最高级的用法。
 
 **场景**: Windows 上必须用 D3D 后端，Linux 上必须用 OpenGL 后端。
@@ -48,7 +58,15 @@ ava("platform=windows")
 alt("graphics-backend")
 ava("platform=linux")
 ```
-Wish 求解器会自动推导：在 Windows 上，由于 `backend-gl` 不可用 (unavailable)，`alt` 只能解析为 `backend-d3d`。
+Wish 求解器 (Solver)会自动推导：在 Windows 上，由于 `backend-gl` 不可用 (unavailable)，`alt` 只能解析为 `backend-d3d`。
+
+**高级逻辑示例：XOR + AVA 强制互斥**
+如果你想确保在特定条件下，用户必须从两个包中选且仅选一个，可以结合 `xor` 使用：
+```python
+# 强制在 Qt5 和 Qt6 之间选择，且受平台可用性约束
+xor("qt=5", "qt=6")
+# 如果 qt=6 在当前平台不可用 (ava 失败)，求解器 (Solver) 将强制选择 qt=5
+```
 
 ---
 
@@ -120,7 +138,7 @@ if sys.platform == "win32":
 **✅ 正确做法**: 使用 `ava`。
 ```python
 req("windows-lib")
-# 正确：告诉求解器，这个包本身只在 Windows 上有效
+# 正确：告诉求解器 (Solver)，这个包本身只在 Windows 上有效
 ava("platform=windows")
 ```
 

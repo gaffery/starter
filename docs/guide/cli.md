@@ -52,7 +52,7 @@ Setup Path: E:\WishTools\packages\idna\3.10.0\package.py
 
 Relation Info:
 ... (JSON 结构的依赖图) ...
-# ^ 显示 SAT 求解器的内部状态
+# ^ 显示 SAT 求解器 (Solver)的内部状态
 
 Execution Time:
   Graph: 0.02s  (构建依赖图耗时)
